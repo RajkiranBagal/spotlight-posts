@@ -35,5 +35,20 @@
 				<element value="vip_featured_posts"/>
 			</property>
 		</properties>
+		<!--
+			Tests legitimately touch WordPress's own globals, constants and hooks:
+			resetting $wp_rest_server, defining DOING_AUTOSAVE to simulate an autosave,
+			firing rest_api_init to boot the REST server. Prefixing those would be
+			wrong, not safer.
+		-->
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+
+	<!--
+		Platform file-system restrictions describe VIP's runtime. The PHPUnit bootstrap
+		never runs there, and needs to report setup failures to STDERR.
+	-->
+	<rule ref="WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite">
+		<exclude-pattern>/tests/*</exclude-pattern>
 	</rule>
 </ruleset>
