@@ -143,31 +143,49 @@ behaviour. It also gives no clean way to set `no_found_rows`.
 `WP_Query` is explicit: every performance flag above is visible at the call site,
 which is exactly what a reviewer needs to audit.
 
-### The slow-query exception, and how it goes away at scale
+### The read path never searches by meta
 
-A `meta_key` / `meta_value` lookup is unindexed — `wp_postmeta` has no composite
-index that makes it selective — so it trips `WordPress.DB.SlowDBQuery`.
+A `meta_key` / `meta_value` lookup is unindexed — `wp_postmeta` has no composite index
+that makes it selective — so it trips `WordPress.DB.SlowDBQuery`. Rather than suppress
+that warning on the hot path, the plugin stops asking the database to *find* featured
+posts at all and maintains the answer on write.
 
-It is suppressed on **one line**, with a justification, and nowhere else:
+| Layer | Role |
+| --- | --- |
+| `_vip_featured` post meta | Source of truth, per post |
+| `vip_featured_post_ids` option | Ordered index of IDs, maintained on every meta write |
+| `wp vip-featured rebuild` | Regenerates the index from meta |
 
-```php
-'meta_value' => '1', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Bounded to MAX_POSTS and object-cached; see comment above.
+The resulting query, captured from the running site:
+
+```sql
+SELECT wp_posts.* FROM wp_posts
+WHERE 1=1 AND wp_posts.ID IN (7,5)
+  AND wp_posts.post_type = 'post'
+  AND ((wp_posts.post_status = 'publish'))
+ORDER BY FIELD(wp_posts.ID,7,5) LIMIT 0, 5
 ```
 
-The suppression is defensible here because the query is capped at 10 rows, cached
-behind a versioned key, and runs with `no_found_rows`. Steady-state traffic never
-reaches the database.
+No `wp_postmeta` join. A primary-key lookup with explicit ordering.
 
-**At real scale I would not run this query at all.** The fix is to stop asking the
-database to find featured posts and instead maintain the answer on write:
+Three consequences worth noting:
 
-1. Keep the canonical list in an option — `vip_featured_post_ids`, an array of IDs.
-2. Update it in the `save_post` handler that already runs, capping its length.
-3. Read with `'post__in' => $ids, 'orderby' => 'post__in'`, which hits the primary key.
+- **Ordering is free.** The index is an ordered array, so newly featured posts lead and
+  an editor can impose any order without a second storage mechanism.
+- **Publication state is not the flag.** Posts are indexed in any non-trashed status and
+  filtered to `publish` at read time, so a post going back to draft keeps its position
+  and reappears where it was when republished.
+- **The index is disposable.** It is derived from meta, so a lost update self-heals via
+  rebuild rather than becoming corruption — which is what makes the small race window on
+  concurrent option writes an acceptable trade.
 
-That turns an unindexed table scan into a primary-key lookup plus one autoloaded
-option read, and the `phpcs:ignore` disappears with it. The meta key stays as the
-per-post source of truth so the option can always be rebuilt.
+The cap of 100 IDs is a platform constraint, not a product one. The option is autoloaded,
+so it lands in `alloptions` on every request; VIP runs an `alloptions-limit` mu-plugin
+precisely because oversized autoloaded options degrade every page load.
+
+**One suppression remains**, in `Index\rebuild()` — the one place that still has to
+search by meta. It runs on activation and on demand via WP-CLI, never on a front-end
+request.
 
 ### Escaping is late and context-matched
 
@@ -226,10 +244,12 @@ humans do not review. This repo is the source side of that split.
 vip-featured-posts/
 ├── vip-featured-posts.php   Plugin header, constants, hook registration
 ├── includes/
+│   ├── index.php            Ordered ID index — the reason reads hit the primary key
 │   ├── query.php            Cached, bounded featured-posts query
 │   ├── meta-box.php         Editor checkbox, meta registration, save handler
 │   ├── block.php            Dynamic block registration + server render
-│   └── rest.php             GET /wp-json/vip-featured/v1/posts
+│   ├── rest.php             GET /wp-json/vip-featured/v1/posts
+│   └── cli.php              wp vip-featured rebuild | list
 ├── src/featured-list/       Block editor source (compiled to build/)
 ├── .phpcs.xml               WordPress-VIP-Go ruleset, PHP 8.1+
 ├── composer.json            PHPCS tooling
