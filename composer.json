@@ -1,0 +1,23 @@
+{
+	"name": "rajkiranbagal/vip-featured-posts",
+	"description": "Flag posts as featured and surface them through a dynamic block and a public REST endpoint.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"version": "1.0.0",
+	"require": {
+		"php": ">=8.1"
+	},
+	"require-dev": {
+		"automattic/vipwpcs": "^3.0",
+		"dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		}
+	},
+	"scripts": {
+		"lint": "phpcs",
+		"lint:fix": "phpcbf"
+	}
+}

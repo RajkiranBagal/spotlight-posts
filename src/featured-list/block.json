@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "vip-featured-posts/featured-list",
+	"title": "Featured Posts",
+	"category": "widgets",
+	"icon": "star-filled",
+	"description": "Displays the posts editors have flagged as featured.",
+	"keywords": [ "featured", "posts", "vip" ],
+	"version": "1.0.0",
+	"textdomain": "vip-featured-posts",
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"attributes": {
+		"heading": {
+			"type": "string",
+			"default": ""
+		},
+		"numberOfPosts": {
+			"type": "number",
+			"default": 5
+		}
+	},
+	"editorScript": "file:./index.js"
+}

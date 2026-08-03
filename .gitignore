@@ -1,0 +1,17 @@
+# Dependencies — restored from the committed lockfiles, never committed themselves.
+/vendor/
+/node_modules/
+
+# Compiled block assets — see README "Why build/ is not committed".
+/build/
+
+# OS and editor noise.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Tooling caches.
+.phpcs.cache
+.phpunit.result.cache
+npm-debug.log*

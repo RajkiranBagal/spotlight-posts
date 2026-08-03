@@ -1,0 +1,15 @@
+{
+	"name": "vip-featured-posts",
+	"version": "1.0.0",
+	"description": "Flag posts as featured and surface them through a dynamic block and a public REST endpoint.",
+	"license": "GPL-2.0-or-later",
+	"private": true,
+	"scripts": {
+		"build": "wp-scripts build",
+		"start": "wp-scripts start"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.0.0",
+		"@wordpress/server-side-render": "^5.0.0"
+	}
+}
