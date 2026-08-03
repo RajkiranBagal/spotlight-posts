@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace VIP_Featured_Posts\Query;
 
 use VIP_Featured_Posts\Index;
+use VIP_Featured_Posts\Schedule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -120,6 +121,17 @@ function get_featured_posts( int $number_of_posts = 5 ): array {
 	$posts = array();
 
 	foreach ( $query->posts as $post ) {
+		/*
+		 * Cron normally clears the flag at the expiry moment, which invalidates these
+		 * lists. This is the safety net for a cron run that has not happened yet --
+		 * checked here, before caching, so an expired post cannot be baked into the
+		 * cached payload. The meta cache was primed by the query above, so it costs no
+		 * additional round trip.
+		 */
+		if ( Schedule\is_expired( (int) $post->ID ) ) {
+			continue;
+		}
+
 		$posts[] = array(
 			'id'      => (int) $post->ID,
 			'title'   => get_the_title( $post ),

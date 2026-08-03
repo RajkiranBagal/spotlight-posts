@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace VIP_Featured_Posts\Meta_Box;
 
 use VIP_Featured_Posts;
+use VIP_Featured_Posts\Schedule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -27,6 +28,11 @@ const NONCE_NAME = 'vip_featured_posts_nonce';
  * Name of the checkbox input.
  */
 const FIELD_NAME = 'vip_featured_posts_featured';
+
+/**
+ * Name of the "featured until" input.
+ */
+const UNTIL_FIELD_NAME = 'vip_featured_posts_until';
 
 /**
  * Register the featured flag as post meta.
@@ -95,6 +101,14 @@ function add_meta_box(): void {
 function render( \WP_Post $post ): void {
 	$is_featured = '1' === get_post_meta( $post->ID, VIP_Featured_Posts\META_KEY, true );
 
+	$expiry = Schedule\get_expiry( $post->ID );
+
+	// datetime-local speaks local wall-clock time, so the stored UTC timestamp is
+	// converted into the site's timezone for display and back again on save.
+	$until_value = $expiry > 0
+		? wp_date( 'Y-m-d\TH:i', $expiry )
+		: '';
+
 	wp_nonce_field( NONCE_ACTION, NONCE_NAME );
 	?>
 	<p>
@@ -109,10 +123,48 @@ function render( \WP_Post $post ): void {
 			<?php esc_html_e( 'Mark this post as featured', 'vip-featured-posts' ); ?>
 		</label>
 	</p>
+	<p>
+		<label for="<?php echo esc_attr( UNTIL_FIELD_NAME ); ?>">
+			<?php esc_html_e( 'Featured until', 'vip-featured-posts' ); ?>
+		</label>
+		<input
+			type="datetime-local"
+			id="<?php echo esc_attr( UNTIL_FIELD_NAME ); ?>"
+			name="<?php echo esc_attr( UNTIL_FIELD_NAME ); ?>"
+			value="<?php echo esc_attr( $until_value ); ?>"
+			class="widefat"
+		/>
+	</p>
+	<p class="description">
+		<?php esc_html_e( 'Leave blank to keep the post featured until it is removed. Times are in the site timezone.', 'vip-featured-posts' ); ?>
+	</p>
 	<p class="description">
 		<?php esc_html_e( 'Featured posts appear in the Featured Posts block and the public REST endpoint.', 'vip-featured-posts' ); ?>
 	</p>
 	<?php
+}
+
+/**
+ * Is this request an autosave?
+ *
+ * WordPress has wp_doing_ajax() and wp_doing_cron() but no autosave equivalent, so this
+ * follows the same shape: read the constant, expose it through a filter. That keeps the
+ * guard verifiable without a test having to define( 'DOING_AUTOSAVE' ) -- a constant,
+ * once defined, persists for the whole process and would silently disable saving for
+ * every test that ran afterwards.
+ *
+ * @return bool Whether WordPress is performing an autosave.
+ */
+function is_autosave(): bool {
+	/**
+	 * Filters whether the current request is treated as an autosave.
+	 *
+	 * @param bool $is_autosave Whether this is an autosave.
+	 */
+	return (bool) apply_filters(
+		'vip_featured_posts_is_autosave',
+		defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE
+	);
 }
 
 /**
@@ -125,7 +177,7 @@ function render( \WP_Post $post ): void {
  * @param int $post_id Post being saved.
  */
 function save( int $post_id ): void {
-	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+	if ( is_autosave() ) {
 		return;
 	}
 
@@ -145,9 +197,47 @@ function save( int $post_id ): void {
 		? sanitize_text_field( wp_unslash( $_POST[ FIELD_NAME ] ) )
 		: '';
 
-	if ( '1' === $submitted ) {
-		update_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '1' );
-	} else {
+	if ( '1' !== $submitted ) {
+		// Deleting the flag also clears any pending expiry, via the hook in
+		// Schedule\clear_on_unfeature(). Nothing to do here.
 		delete_post_meta( $post_id, VIP_Featured_Posts\META_KEY );
+
+		return;
 	}
+
+	update_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '1' );
+
+	$until = isset( $_POST[ UNTIL_FIELD_NAME ] )
+		? sanitize_text_field( wp_unslash( $_POST[ UNTIL_FIELD_NAME ] ) )
+		: '';
+
+	Schedule\set_expiry( $post_id, parse_until( $until ) );
+}
+
+/**
+ * Convert a datetime-local value into a UTC timestamp.
+ *
+ * The browser sends wall-clock time with no offset, so it has to be interpreted in the
+ * site's timezone rather than the server's -- otherwise "featured until 5pm" means
+ * something different depending on where the server happens to sit.
+ *
+ * @param string $value Raw datetime-local value, e.g. "2026-08-07T17:00".
+ * @return int UTC timestamp, or 0 when empty or unparseable.
+ */
+function parse_until( string $value ): int {
+	$value = trim( $value );
+
+	if ( '' === $value ) {
+		return 0;
+	}
+
+	try {
+		$date = new \DateTimeImmutable( $value, wp_timezone() );
+	} catch ( \Exception $e ) {
+		// An unparseable value means no expiry rather than an arbitrary one. The field
+		// is a native datetime input, so this is a malformed or hand-crafted request.
+		return 0;
+	}
+
+	return $date->getTimestamp();
 }
