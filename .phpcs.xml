@@ -51,4 +51,13 @@
 	<rule ref="WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite">
 		<exclude-pattern>/tests/*</exclude-pattern>
 	</rule>
+
+	<!--
+		Overriding a WordPress global is exactly what a test needs to do to exercise
+		main-query behaviour: is_main_query() compares identity against $wp_the_query,
+		so a query has to be installed as that global to be recognised as the main one.
+	-->
+	<rule ref="WordPress.WP.GlobalVariablesOverride.Prohibited">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
 </ruleset>

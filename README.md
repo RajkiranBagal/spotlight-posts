@@ -1,7 +1,8 @@
 # VIP Featured Posts
 
-A small WordPress plugin that lets editors flag posts as **featured** and surfaces
-them two ways: a dynamic Gutenberg block and a public REST endpoint.
+A small WordPress plugin that lets editors flag posts as **featured** — from the editor,
+the posts list, bulk actions or Quick Edit — and surfaces them two ways: a dynamic
+Gutenberg block and a public REST endpoint.
 
 > **This is a self-directed proof of concept.** It is not a client deliverable and
 > is not affiliated with WordPress VIP. I built it to demonstrate the habits a VIP
@@ -21,7 +22,19 @@ file by file, and how to test it all on localhost.
 
 ## What it does
 
-Editors get a **Featured** checkbox in the post sidebar. Checked posts appear in:
+Editors can flag a post four ways, because different jobs want different ones:
+
+| Where | For |
+| --- | --- |
+| **Featured** checkbox in the post sidebar | Editing a single post |
+| Star toggle in the posts list table | Changing one post without opening it |
+| **Mark as featured** bulk action | Curating many at once |
+| Quick Edit checkbox | Alongside the other inline fields |
+
+A **Featured / Not featured** filter sits above the list table, and the column appears in
+Screen Options so anyone who does not curate can hide it.
+
+Flagged posts appear in:
 
 - the **Featured Posts** block (dynamic, server-rendered, configurable heading and count), and
 - `GET /wp-json/vip-featured/v1/posts?count=5`
@@ -71,9 +84,10 @@ bin/install-wp-tests.sh wordpress_test wordpress wordpress 127.0.0.1:50400 6.7 t
 WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test
 ```
 
-44 tests cover the save guards, the count clamp, REST validation, cache invalidation,
-index ordering and the draft round-trip. They have been mutation-checked: removing the
-capability check, the meta-key filter or the count clamp each turns the suite red.
+61 tests cover the save guards, the count clamp, REST validation, cache invalidation,
+index ordering, the draft round-trip, and the list-table controls. They have been
+mutation-checked: removing the capability check, the meta-key filter or the count clamp
+each turns the suite red.
 
 ---
 
@@ -128,9 +142,15 @@ embeds a **cache version integer**:
 featured_v<version>_n<count>
 ```
 
-Invalidation is `wp_cache_incr()` on that single version key, hooked to
-`save_post_post` and `deleted_post`. Every previously cached permutation is
-orphaned at once and ages out on its own.
+Invalidation is `wp_cache_incr()` on that single version key. Every previously cached
+permutation is orphaned at once and ages out on its own.
+
+It fires from two directions. Every index mutation routes through `Index\set_ids()`,
+which invalidates as it writes — so featuring a post through the meta box, a bulk action,
+Quick Edit, the row toggle, WP-CLI or the REST meta API all converge on the same
+invalidation. Separately, `save_post_post` covers edits that change what the list
+*renders* without changing who is in it: a retitled post, a new excerpt, a draft going
+live.
 
 This matters on VIP specifically. The object cache is shared and remote, and it
 offers no "delete by prefix" primitive — so the alternative is tracking and
@@ -273,6 +293,7 @@ vip-featured-posts/
 │   ├── meta-box.php         Editor checkbox, meta registration, save handler
 │   ├── block.php            Dynamic block registration + server render
 │   ├── rest.php             GET /wp-json/vip-featured/v1/posts
+│   ├── admin/list-table.php Column, bulk actions, Quick Edit, filter, AJAX toggle
 │   └── cli.php              wp vip-featured rebuild | list
 ├── src/featured-list/       Block editor source (compiled to build/)
 ├── .phpcs.xml               WordPress-VIP-Go ruleset, PHP 8.1+

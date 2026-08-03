@@ -35,14 +35,19 @@ jobs:
         run: |
           # A phpcs:ignore that has stopped matching is dead weight: it hides intent and
           # survives long after the finding it silenced is gone. Re-running with
-          # annotations disabled should surface exactly one finding -- the documented
-          # meta_value suppression in Index\rebuild(). Any other number means drift.
+          # annotations disabled surfaces everything the ignores are hiding, and the
+          # total is pinned so any change has to be a deliberate one.
+          #
+          # Expected 4:
+          #   1  Index\rebuild()            slow meta query, maintenance path only
+          #   3  List_Table\read_query_param()  nonce exemption on display-only $_GET
+          EXPECTED=4
           count=$(vendor/bin/phpcs --ignore-annotations --report=summary \
             | grep -oE 'A TOTAL OF [0-9]+ ERRORS? AND [0-9]+ WARNINGS?' \
             | grep -oE '[0-9]+ WARNING' | grep -oE '^[0-9]+' || echo 0)
-          echo "Findings hidden by phpcs:ignore: ${count:-0} (expected 1)"
-          if [ "${count:-0}" -ne 1 ]; then
-            echo "::error::Expected exactly 1 suppressed finding, found ${count:-0}. Review the phpcs:ignore comments."
+          echo "Findings hidden by phpcs:ignore: ${count:-0} (expected ${EXPECTED})"
+          if [ "${count:-0}" -ne "$EXPECTED" ]; then
+            echo "::error::Expected ${EXPECTED} suppressed findings, found ${count:-0}. Review the phpcs:ignore comments and update this count deliberately."
             exit 1
           fi
 
