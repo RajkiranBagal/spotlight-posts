@@ -13,6 +13,10 @@ them two ways: a dynamic Gutenberg block and a public REST endpoint.
 - **Text domain:** `vip-featured-posts`
 - **Meta key:** `_vip_featured`
 
+📘 **[docs/VIP-GUIDE.md](docs/VIP-GUIDE.md)** — a full walkthrough of how the VIP platform
+works end to end: repo anatomy, the request lifecycle, the local environment, this plugin
+file by file, and how to test it all on localhost.
+
 ---
 
 ## What it does
