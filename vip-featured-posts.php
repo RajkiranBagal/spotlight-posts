@@ -38,10 +38,15 @@ const VERSION = '1.0.0';
  */
 define( 'VIP_FEATURED_POSTS_DIR', plugin_dir_path( __FILE__ ) );
 
+require_once VIP_FEATURED_POSTS_DIR . 'includes/index.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/query.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/meta-box.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/block.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/rest.php';
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once VIP_FEATURED_POSTS_DIR . 'includes/cli.php';
+}
 
 /**
  * Wire up every hook the plugin owns.
@@ -58,23 +63,37 @@ function bootstrap(): void {
 
 	add_action( 'rest_api_init', __NAMESPACE__ . '\\REST\\register_routes' );
 
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		CLI\register();
+	}
+
 	/*
-	 * Cache invalidation, from two directions.
-	 *
-	 * The post hooks catch changes that alter which posts are eligible or how they
-	 * render -- a status transition, a retitled post, a deletion -- without the
-	 * featured flag itself moving.
+	 * Index maintenance. Every mutation routes through Index\set_ids(), which also
+	 * invalidates the cached lists -- so these hooks keep the index correct and the
+	 * cache fresh in one step.
 	 *
 	 * The meta hooks catch the flag being written outside any editing flow, which
 	 * save_post never sees: WP-CLI, the REST meta endpoints, an admin-ajax toggle, or
 	 * another plugin calling update_post_meta() directly.
 	 */
-	add_action( 'save_post_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
-	add_action( 'deleted_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
+	add_action( 'added_post_meta', __NAMESPACE__ . '\\Index\\sync_on_write', 10, 4 );
+	add_action( 'updated_post_meta', __NAMESPACE__ . '\\Index\\sync_on_write', 10, 4 );
+	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Index\\sync_on_delete', 10, 3 );
+	add_action( 'deleted_post', __NAMESPACE__ . '\\Index\\sync_on_post_delete' );
 
-	add_action( 'added_post_meta', __NAMESPACE__ . '\\Query\\bump_cache_version_on_meta', 10, 3 );
-	add_action( 'updated_post_meta', __NAMESPACE__ . '\\Query\\bump_cache_version_on_meta', 10, 3 );
-	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Query\\bump_cache_version_on_meta', 10, 3 );
+	/*
+	 * A save can change what the list renders without touching the flag or the index
+	 * -- a retitled post, a new excerpt, a draft going live. The index is already
+	 * correct in those cases; only the cached payload is stale.
+	 */
+	add_action( 'save_post_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
 }
 
 bootstrap();
+
+/*
+ * Build the index once at activation, so a site whose posts were already flagged
+ * surfaces them immediately rather than waiting for the first read to notice the
+ * option is missing.
+ */
+register_activation_hook( __FILE__, __NAMESPACE__ . '\\Index\\rebuild' );

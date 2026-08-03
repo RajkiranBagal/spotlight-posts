@@ -66,9 +66,15 @@ reads the repository.
 The query becomes `'post__in' => $ids, 'orderby' => 'post__in'` — a primary-key lookup.
 Three things fall out at once:
 
-- the `phpcs:ignore` for `WordPress.DB.SlowDBQuery` disappears entirely,
-- the unindexed `meta_value` scan is gone,
-- **manual ordering comes free**, because the array is already ordered.
+- the unindexed `meta_value` scan leaves the read path entirely,
+- **manual ordering comes free**, because the array is already ordered,
+- a draft keeps its position, because the index tracks the flag rather than
+  publication state.
+
+*Correction to an earlier claim:* the `phpcs:ignore` does not disappear. Something has
+to find the flagged posts at least once, so it survives inside `Index\rebuild()` — but
+it moves off the hot path to a maintenance path that runs on activation and on demand,
+which is where a suppression like that genuinely belongs.
 
 Two caveats to design for rather than discover:
 

@@ -9,7 +9,7 @@ declare( strict_types = 1 );
 
 namespace VIP_Featured_Posts\Query;
 
-use VIP_Featured_Posts;
+use VIP_Featured_Posts\Index;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -69,32 +69,6 @@ function bump_cache_version(): void {
 }
 
 /**
- * Invalidate the cache when the featured flag itself is written.
- *
- * save_post only fires when a post is saved through an editing flow. Meta can be
- * written without that ever happening -- WP-CLI, the REST meta endpoints, an admin-ajax
- * toggle, or another plugin calling update_post_meta() directly. Hooking the meta write
- * itself means invalidation follows the data rather than a proxy for it.
- *
- * Shared by added_/updated_/deleted_post_meta. Their first argument differs -- a single
- * meta ID for add and update, an array of them for delete -- but the meta key is always
- * third, and it is the only argument this needs. Nothing is type-declared, because a
- * bad value should fall through the early return rather than raise a TypeError inside a
- * hook callback.
- *
- * @param int|int[] $meta_id   Meta row ID, or IDs when deleting. Unused.
- * @param int       $object_id Post the meta belongs to. Unused.
- * @param mixed     $meta_key  Meta key that was written.
- */
-function bump_cache_version_on_meta( $meta_id, $object_id, $meta_key ): void {
-	if ( VIP_Featured_Posts\META_KEY !== $meta_key ) {
-		return;
-	}
-
-	bump_cache_version();
-}
-
-/**
  * Fetch the featured posts as a lightweight array.
  *
  * Returns only the fields a consumer actually renders, so we cache a small
@@ -113,28 +87,30 @@ function get_featured_posts( int $number_of_posts = 5 ): array {
 		return $cached;
 	}
 
+	$ids = Index\get_ids();
+
+	if ( empty( $ids ) ) {
+		wp_cache_set( $cache_key, array(), CACHE_GROUP, 300 );
+
+		return array();
+	}
+
 	/*
-	 * The meta_key/meta_value pair below trips WordPress.DB.SlowDBQuery. It is
-	 * ignored on those two lines specifically, not suppressed wholesale,
-	 * because the query is bounded on both sides:
+	 * A primary-key lookup, not a meta search. The index already knows which posts are
+	 * featured and in what order, so this only has to fetch them.
 	 *
-	 *   - posts_per_page is clamped to a maximum of MAX_POSTS (10), so the
-	 *     result set can never grow without limit;
-	 *   - the result is stored in the object cache under a versioned key, so
-	 *     steady-state traffic does not reach the database at all;
-	 *   - no_found_rows drops the SQL_CALC_FOUND_ROWS pass, which is the
-	 *     expensive half of an unindexed meta lookup.
-	 *
-	 * At real VIP scale this should not be a meta query at all -- see README
-	 * for the option-indexed post__in approach that replaces it.
+	 * post__in carries at most MAX_IDS (100) entries and posts_per_page caps the result
+	 * at MAX_POSTS (10). Filtering happens here rather than in the index because the
+	 * index tracks the flag, not publication state -- a draft keeps its position and
+	 * simply does not surface until it is published.
 	 */
 	$query = new \WP_Query(
 		array(
 			'post_type'              => 'post',
 			'post_status'            => 'publish',
+			'post__in'               => $ids,
+			'orderby'                => 'post__in',
 			'posts_per_page'         => $number_of_posts,
-			'meta_key'               => VIP_Featured_Posts\META_KEY,
-			'meta_value'             => '1', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Bounded to MAX_POSTS and object-cached; see comment above.
 			'no_found_rows'          => true,
 			'update_post_term_cache' => false,
 			'ignore_sticky_posts'    => true,
