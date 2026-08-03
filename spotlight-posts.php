@@ -43,6 +43,45 @@ define( 'SPOTLIGHT_POSTS_DIR', plugin_dir_path( __FILE__ ) );
  */
 define( 'SPOTLIGHT_POSTS_FILE', __FILE__ );
 
+/**
+ * Post types this plugin operates on.
+ *
+ * Deliberately not named get_post_types(): inside this namespace an unqualified call to
+ * that would resolve to ours rather than WordPress's, shadowing core in a way that is
+ * hard to spot when reading a single line.
+ *
+ * Results are filtered through post_type_exists(), so a filter naming a type that was
+ * never registered cannot produce meta bound to a type that does not exist.
+ *
+ * @return string[] Supported post type slugs.
+ */
+function supported_post_types(): array {
+	/**
+	 * Filters the post types that can be spotlighted.
+	 *
+	 * @param string[] $post_types Post type slugs. Defaults to just 'post'.
+	 */
+	$types = (array) apply_filters( 'spotlight_posts_post_types', array( 'post' ) );
+
+	$types = array_values(
+		array_unique(
+			array_filter(
+				array_map( 'strval', $types ),
+				static function ( string $type ): bool {
+					return '' !== $type && post_type_exists( $type );
+				}
+			)
+		)
+	);
+
+	/*
+	 * Falls back to 'post' rather than returning empty. An empty post_type is ignored by
+	 * WP_Query, which would silently widen every query instead of narrowing it -- the
+	 * same trap as an empty post__in.
+	 */
+	return empty( $types ) ? array( 'post' ) : $types;
+}
+
 require_once SPOTLIGHT_POSTS_DIR . 'includes/schedule.php';
 require_once SPOTLIGHT_POSTS_DIR . 'includes/index.php';
 require_once SPOTLIGHT_POSTS_DIR . 'includes/query.php';
@@ -85,8 +124,13 @@ function bootstrap(): void {
 	add_action( 'updated_post_meta', __NAMESPACE__ . '\\Schedule\\invalidate_on_expiry_change', 10, 3 );
 	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Schedule\\invalidate_on_expiry_change', 10, 3 );
 
-	add_action( 'add_meta_boxes_post', __NAMESPACE__ . '\\Meta_Box\\add_meta_box' );
-	add_action( 'save_post_post', __NAMESPACE__ . '\\Meta_Box\\save' );
+	/*
+	 * Per-type hooks. These are dynamic hook names, so a plugin supporting several post
+	 * types has to register once per type rather than once overall -- there is no
+	 * `save_post_any` to hook. Registered on init so a filter can name a custom post
+	 * type that is itself registered on init.
+	 */
+	add_action( 'init', __NAMESPACE__ . '\\register_post_type_hooks', 20 );
 
 	add_action( 'rest_api_init', __NAMESPACE__ . '\\REST\\register_routes' );
 
@@ -103,11 +147,6 @@ function bootstrap(): void {
 	if ( is_admin() ) {
 		$list_table = __NAMESPACE__ . '\\Admin\\List_Table\\';
 
-		add_filter( 'manage_post_posts_columns', $list_table . 'add_column' );
-		add_action( 'manage_post_posts_custom_column', $list_table . 'render_column', 10, 2 );
-
-		add_filter( 'bulk_actions-edit-post', $list_table . 'register_bulk_actions' );
-		add_filter( 'handle_bulk_actions-edit-post', $list_table . 'handle_bulk_action', 10, 3 );
 		add_action( 'admin_notices', $list_table . 'bulk_action_notice' );
 
 		add_action( 'quick_edit_custom_box', $list_table . 'quick_edit_field', 10, 2 );
@@ -149,7 +188,32 @@ function bootstrap(): void {
 	 * -- a retitled post, a new excerpt, a draft going live. The index is already
 	 * correct in those cases; only the cached payload is stale.
 	 */
-	add_action( 'save_post_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
+	add_action( 'save_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
+}
+
+/**
+ * Register the hooks whose names embed a post type.
+ *
+ * Run on init at priority 20 so a site can register a custom post type on init and still
+ * have it picked up by the spotlight_posts_post_types filter.
+ */
+function register_post_type_hooks(): void {
+	$list_table = __NAMESPACE__ . '\\Admin\\List_Table\\';
+
+	foreach ( supported_post_types() as $post_type ) {
+		add_action( "add_meta_boxes_{$post_type}", __NAMESPACE__ . '\\Meta_Box\\add_meta_box' );
+		add_action( "save_post_{$post_type}", __NAMESPACE__ . '\\Meta_Box\\save' );
+
+		if ( ! is_admin() ) {
+			continue;
+		}
+
+		add_filter( "manage_{$post_type}_posts_columns", $list_table . 'add_column' );
+		add_action( "manage_{$post_type}_posts_custom_column", $list_table . 'render_column', 10, 2 );
+
+		add_filter( "bulk_actions-edit-{$post_type}", $list_table . 'register_bulk_actions' );
+		add_filter( "handle_bulk_actions-edit-{$post_type}", $list_table . 'handle_bulk_action', 10, 3 );
+	}
 }
 
 bootstrap();

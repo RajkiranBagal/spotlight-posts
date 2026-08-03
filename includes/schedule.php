@@ -49,18 +49,20 @@ const CRON_HOOK = 'spotlight_posts_expire';
  * Register the expiry as post meta.
  */
 function register_meta(): void {
-	register_post_meta(
-		'post',
-		META_KEY,
-		array(
-			'type'              => 'integer',
-			'single'            => true,
-			'default'           => 0,
-			'show_in_rest'      => false,
-			'sanitize_callback' => __NAMESPACE__ . '\\sanitize_meta',
-			'auth_callback'     => __NAMESPACE__ . '\\auth_meta',
-		)
-	);
+	foreach ( Spotlight_Posts\supported_post_types() as $post_type ) {
+		register_post_meta(
+			$post_type,
+			META_KEY,
+			array(
+				'type'              => 'integer',
+				'single'            => true,
+				'default'           => 0,
+				'show_in_rest'      => false,
+				'sanitize_callback' => __NAMESPACE__ . '\\sanitize_meta',
+				'auth_callback'     => __NAMESPACE__ . '\\auth_meta',
+			)
+		);
+	}
 }
 
 /**

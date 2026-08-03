@@ -9,6 +9,7 @@ declare( strict_types = 1 );
 
 namespace Spotlight_Posts\Query;
 
+use Spotlight_Posts;
 use Spotlight_Posts\Index;
 use Spotlight_Posts\Schedule;
 
@@ -107,7 +108,7 @@ function get_featured_posts( int $number_of_posts = 5 ): array {
 	 */
 	$query = new \WP_Query(
 		array(
-			'post_type'              => 'post',
+			'post_type'              => Spotlight_Posts\supported_post_types(),
 			'post_status'            => 'publish',
 			'post__in'               => $ids,
 			'orderby'                => 'post__in',
