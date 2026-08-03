@@ -12,9 +12,9 @@ under both a VIP code review and a real editorial team.
 | 2 | Editorial UX — list table, ordering, scheduling | ✅ done |
 | 3 | Display — Query Loop variation | ✅ done |
 | 4 | Interactivity API — search, filtering, pagination | deferred |
-| 5 | Polish — post-type agnostic, capability, a11y, i18n | not started |
+| 5 | Polish — post-type agnostic, uninstall, a11y, i18n/RTL | ✅ done |
 
-**Phases 0–3 were the recommended cut line, and both goals are met there.** Phase 4 is
+**Phases 0–3 were the recommended cut line; 5 followed. Only Phase 4 remains.** Phase 4 is
 where scope risk concentrates: search on VIP means Elasticsearch, which is a research
 task rather than an afternoon.
 
