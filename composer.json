@@ -1,6 +1,6 @@
 {
 	"name": "rajkiranbagal/vip-featured-posts",
-	"description": "Flag posts as featured and surface them through a dynamic block and a public REST endpoint.",
+	"description": "Flag posts as featured and surface them through a Query Loop variation, a dynamic block, and a public REST endpoint.",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0-or-later",
 	"version": "1.0.0",

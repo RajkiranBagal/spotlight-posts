@@ -1,14 +1,21 @@
 # VIP Featured Posts
 
-A small WordPress plugin that lets editors flag posts as **featured** — from the editor,
-the posts list, bulk actions or Quick Edit — and surfaces them two ways: a dynamic
-Gutenberg block and a public REST endpoint.
+A WordPress plugin that lets editors flag posts as **featured** — from the editor, the
+posts list, bulk actions or Quick Edit — and surfaces them three ways: a variation of
+core's Query Loop, a dedicated dynamic block, and a public REST endpoint.
 
-> **This is a self-directed proof of concept.** It is not a client deliverable and
-> is not affiliated with WordPress VIP. I built it to demonstrate the habits a VIP
-> engagement actually depends on — object caching, bounded `WP_Query`, disciplined
-> escaping and sanitization, nonce plus capability checks, and a clean
-> `WordPress-VIP-Go` PHPCS run.
+> **Not affiliated with WordPress VIP or Automattic.** The name and the `vip_` prefixes
+> refer to the platform this targets, not to its authorship. It is independent work,
+> built to the standards a VIP engagement depends on: object caching, primary-key
+> queries, disciplined escaping and sanitization, nonce plus capability checks, and a
+> clean `WordPress-VIP-Go` run.
+
+**What that rests on:** 106 integration tests against a real WordPress install · CI on
+PHP 8.1 / 8.2 / 8.3 and WordPress trunk · zero PHPCS findings · every feature exercised
+end to end in a VIP local environment.
+
+It has not run against VIP production traffic, so read "VIP-ready" as *built to the
+standard and verified locally*, not as *proven at scale*.
 
 - **Requires:** WordPress 6.4+, PHP 8.1+
 - **Text domain:** `vip-featured-posts`
@@ -44,12 +51,15 @@ Curation is gated on `edit_others_posts` rather than post authorship, filterable
 `vip_featured_posts_manage_capability` — deciding what the homepage promotes and being
 able to write posts are different jobs.
 
-Flagged posts appear in:
+Flagged posts appear in three places:
 
+- a **Featured Posts** variation of core's Query Loop — full card layouts with featured
+  images, titles, excerpts and dates, styled by your theme,
 - the **Featured Posts** block (dynamic, server-rendered, configurable heading and count), and
 - `GET /wp-json/vip-featured/v1/posts?count=5`
 
-Both read through the same cached query, so they cannot disagree with each other.
+All three read the same index and apply the same expiry rule, so they cannot disagree
+about what is featured.
 
 ---
 
@@ -58,12 +68,17 @@ Both read through the same cached query, so they cannot disagree with each other
 ```bash
 composer install     # PHPCS + WordPress VIP coding standards
 npm install          # @wordpress/scripts build toolchain
-npm run build        # compiles src/featured-list -> build/featured-list
+npm run build        # compiles src/ -> build/
 ```
 
-`npm run build` is **required before activating the plugin**. Block registration
-deliberately no-ops when `build/block.json` is missing, so a fresh clone that has
-not been built yet degrades to "block absent" rather than a fatal error.
+`npm run build` produces two entry points: `build/featured-list` for the dedicated block,
+and `build/query-loop` for the Query Loop variation. They are separate `wp-scripts` runs
+because `wp-scripts build` only discovers entries from `block.json`, and a block variation
+has no `block.json` of its own.
+
+Building is **required before activating the plugin**. Both registrations deliberately
+no-op when their build output is missing, so a fresh clone that has not been built yet
+degrades to "block absent" rather than a fatal error.
 
 ### Commands
 
@@ -94,8 +109,8 @@ bin/install-wp-tests.sh wordpress_test wordpress wordpress 127.0.0.1:50400 6.7 t
 WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test
 ```
 
-95 tests cover the save guards, the count clamp, REST validation, cache invalidation,
-index ordering, the draft round-trip, the list-table controls, the ordering screen and scheduled expiry. They have been
+106 tests cover the save guards, the count clamp, REST validation, cache invalidation,
+index ordering, the draft round-trip, the list-table controls, the ordering screen, scheduled expiry and the Query Loop variation. They have been
 mutation-checked: removing the capability check, the meta-key filter or the count clamp
 each turns the suite red.
 
@@ -241,6 +256,35 @@ precisely because oversized autoloaded options degrade every page load.
 search by meta. It runs on activation and on demand via WP-CLI, never on a front-end
 request.
 
+### Extending Query Loop instead of rebuilding it
+
+Core already ships the "cards with toggleable parts" system people usually try to
+rebuild: Query Loop, Post Template, Post Title, Post Featured Image, Post Excerpt, Post
+Date. Building your own means owning a card layout engine, a styling UI, `theme.json`
+integration — and missing every future improvement to those blocks.
+
+So the plugin contributes the one thing core cannot know, which posts are featured and in
+what order, and lets core own the rest. A block variation registers in the inserter; a
+`query_loop_block_query_vars` filter narrows the query core already assembled, so
+pagination, post type and every other editor control keep working.
+
+**The part that is not obvious.** The documented way to identify a variation server-side
+is a top-level `namespace` attribute. It does not work here, and the failure is silent —
+the filter runs, finds nothing, and every Query Loop on the site renders unfiltered.
+
+`core/query` provides only `query` and `enhancedPagination` as block context, and
+`query_loop_block_query_vars` receives the **Post Template**, not the Query block. A
+top-level attribute never reaches it. Verified on WordPress 6.7:
+
+```
+context keys : query, enhancedPagination
+namespace in query context : (absent)
+```
+
+The variation therefore sets `namespace` in **both** places — top level for core's
+variation matching and `isActive`, and inside `query` where the server can actually read
+it. Both are load-bearing.
+
 ### Scheduled expiry is a caching problem
 
 "Feature this until Friday" sounds like a UI feature. It is really a question about how
@@ -336,6 +380,7 @@ vip-featured-posts/
 │   ├── meta-box.php         Editor checkbox, meta registration, save handler
 │   ├── block.php            Dynamic block registration + server render
 │   ├── rest.php             GET /wp-json/vip-featured/v1/posts
+│   ├── query-loop.php       Featured variation of core's Query Loop
 │   ├── admin/list-table.php Column, bulk actions, Quick Edit, filter, AJAX toggle
 │   ├── admin/order-screen.php  Drag-to-reorder screen
 │   └── cli.php              wp vip-featured rebuild | list

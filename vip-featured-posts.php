@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       VIP Featured Posts
  * Plugin URI:        https://github.com/RajkiranBagal/vip-featured-posts
- * Description:       Lets editors flag posts as featured, then surfaces them through a dynamic block and a public REST endpoint.
+ * Description:       Lets editors flag posts as featured, then surfaces them through a Query Loop variation, a dynamic block, and a public REST endpoint.
  * Version:           1.0.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
@@ -49,6 +49,7 @@ require_once VIP_FEATURED_POSTS_DIR . 'includes/query.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/meta-box.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/block.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/rest.php';
+require_once VIP_FEATURED_POSTS_DIR . 'includes/query-loop.php';
 
 if ( is_admin() ) {
 	require_once VIP_FEATURED_POSTS_DIR . 'includes/admin/list-table.php';
@@ -88,6 +89,16 @@ function bootstrap(): void {
 	add_action( 'save_post_post', __NAMESPACE__ . '\\Meta_Box\\save' );
 
 	add_action( 'rest_api_init', __NAMESPACE__ . '\\REST\\register_routes' );
+
+	/*
+	 * Query Loop variation. The front-end filter narrows core's own query; the REST
+	 * pair exists because the editor previews a Query Loop by calling the posts
+	 * collection directly, and core does not forward a variation's namespace there.
+	 */
+	add_filter( 'query_loop_block_query_vars', __NAMESPACE__ . '\\Query_Loop\\filter_query_vars', 10, 3 );
+	add_action( 'enqueue_block_editor_assets', __NAMESPACE__ . '\\Query_Loop\\enqueue_editor_assets' );
+	add_filter( 'rest_post_collection_params', __NAMESPACE__ . '\\Query_Loop\\add_rest_collection_param' );
+	add_filter( 'rest_post_query', __NAMESPACE__ . '\\Query_Loop\\filter_rest_query', 10, 2 );
 
 	if ( is_admin() ) {
 		$list_table = __NAMESPACE__ . '\\Admin\\List_Table\\';
