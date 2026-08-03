@@ -2,12 +2,12 @@
  * Featured column in the posts list table.
  */
 
-.column-vip_featured {
+.column-spotlight_featured {
 	width: 5.5em;
 	text-align: center;
 }
 
-.vip-featured-toggle {
+.spotlight-toggle {
 	cursor: pointer;
 	padding: 2px;
 	line-height: 1;
@@ -17,45 +17,45 @@
 	border-radius: 3px;
 }
 
-.vip-featured-toggle:hover,
-.vip-featured-toggle:focus {
+.spotlight-toggle:hover,
+.spotlight-toggle:focus {
 	color: #b32d2e;
 }
 
 /* The default button-link focus style is nearly invisible against a table row. */
-.vip-featured-toggle:focus-visible {
+.spotlight-toggle:focus-visible {
 	outline: 2px solid #2271b1;
 	outline-offset: 1px;
 }
 
-.vip-featured-toggle.is-featured {
+.spotlight-toggle.is-featured {
 	color: #dba617;
 }
 
-.vip-featured-toggle.is-featured:hover,
-.vip-featured-toggle.is-featured:focus {
+.spotlight-toggle.is-featured:hover,
+.spotlight-toggle.is-featured:focus {
 	color: #b32d2e;
 }
 
-.vip-featured-toggle.is-busy {
+.spotlight-toggle.is-busy {
 	opacity: 0.5;
 	cursor: default;
 }
 
-.vip-featured-toggle .vip-featured-icon {
+.spotlight-toggle .spotlight-icon {
 	width: 20px;
 	height: 20px;
 	font-size: 20px;
 	vertical-align: middle;
 }
 
-.vip-featured-state {
+.spotlight-state {
 	color: #646970;
 	font-style: italic;
 }
 
 @media screen and (max-width: 782px) {
-	.column-vip_featured {
+	.column-spotlight_featured {
 		width: auto;
 		text-align: left;
 	}

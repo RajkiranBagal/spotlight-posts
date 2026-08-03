@@ -2,21 +2,21 @@
 /**
  * Public REST endpoint exposing the featured posts.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\REST;
+namespace Spotlight_Posts\REST;
 
-use VIP_Featured_Posts\Query;
+use Spotlight_Posts\Query;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * REST namespace for this plugin.
  */
-const REST_NAMESPACE = 'vip-featured/v1';
+const REST_NAMESPACE = 'spotlight/v1';
 
 /**
  * Route exposing the featured posts collection.
@@ -44,7 +44,7 @@ function register_routes(): void {
 			'permission_callback' => '__return_true',
 			'args'                => array(
 				'count' => array(
-					'description'       => __( 'Number of featured posts to return.', 'vip-featured-posts' ),
+					'description'       => __( 'Number of featured posts to return.', 'spotlight-posts' ),
 					'type'              => 'integer',
 					'default'           => 5,
 					'required'          => false,
@@ -65,8 +65,8 @@ function register_routes(): void {
 function validate_count( $value ) {
 	if ( ! is_numeric( $value ) ) {
 		return new \WP_Error(
-			'vip_featured_posts_invalid_count',
-			__( 'The count parameter must be a number.', 'vip-featured-posts' ),
+			'spotlight_posts_invalid_count',
+			__( 'The count parameter must be a number.', 'spotlight-posts' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -75,10 +75,10 @@ function validate_count( $value ) {
 
 	if ( $count < Query\MIN_POSTS || $count > Query\MAX_POSTS ) {
 		return new \WP_Error(
-			'vip_featured_posts_invalid_count',
+			'spotlight_posts_invalid_count',
 			sprintf(
 				/* translators: 1: minimum allowed count, 2: maximum allowed count. */
-				__( 'The count parameter must be between %1$d and %2$d.', 'vip-featured-posts' ),
+				__( 'The count parameter must be between %1$d and %2$d.', 'spotlight-posts' ),
 				Query\MIN_POSTS,
 				Query\MAX_POSTS
 			),

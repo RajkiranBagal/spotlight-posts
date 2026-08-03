@@ -1,14 +1,14 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "vip-featured-posts/featured-list",
+	"name": "spotlight-posts/featured-list",
 	"title": "Featured Posts",
 	"category": "widgets",
 	"icon": "star-filled",
 	"description": "Displays the posts editors have flagged as featured.",
-	"keywords": [ "featured", "posts", "vip" ],
+	"keywords": [ "featured", "posts", "spotlight" ],
 	"version": "1.0.0",
-	"textdomain": "vip-featured-posts",
+	"textdomain": "spotlight-posts",
 	"supports": {
 		"html": false,
 		"align": [ "wide", "full" ]

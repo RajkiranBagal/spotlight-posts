@@ -2,22 +2,22 @@
 /**
  * Cached lookup for featured posts.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Query;
+namespace Spotlight_Posts\Query;
 
-use VIP_Featured_Posts\Index;
-use VIP_Featured_Posts\Schedule;
+use Spotlight_Posts\Index;
+use Spotlight_Posts\Schedule;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Object cache group for everything this plugin stores.
  */
-const CACHE_GROUP = 'vip_featured_posts';
+const CACHE_GROUP = 'spotlight_posts';
 
 /**
  * Cache key holding the current cache version number.

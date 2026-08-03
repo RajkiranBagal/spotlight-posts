@@ -2,18 +2,18 @@
 /**
  * Tests for the ordered ID index.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Index;
+use Spotlight_Posts;
+use Spotlight_Posts\Index;
 
 /**
- * @covers \VIP_Featured_Posts\Index
+ * @covers \Spotlight_Posts\Index
  */
 class IndexTest extends TestCase {
 
@@ -66,13 +66,13 @@ class IndexTest extends TestCase {
 
 		Index\set_ids( array( $a ) );
 
-		$version_before = \VIP_Featured_Posts\Query\get_cache_version();
+		$version_before = \Spotlight_Posts\Query\get_cache_version();
 		Index\remove( 999999 );
 
 		$this->assertSame( array( $a ), Index\get_ids() );
 		$this->assertSame(
 			$version_before,
-			\VIP_Featured_Posts\Query\get_cache_version(),
+			\Spotlight_Posts\Query\get_cache_version(),
 			'A no-op removal must not invalidate the cache.'
 		);
 	}
@@ -101,7 +101,7 @@ class IndexTest extends TestCase {
 	public function test_meta_write_adds_to_index(): void {
 		$post_id = self::factory()->post->create();
 
-		update_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
 
 		$this->assertSame( array( $post_id ), Index\get_ids() );
 	}
@@ -114,7 +114,7 @@ class IndexTest extends TestCase {
 
 		$this->assertSame( array( $post_id ), Index\get_ids() );
 
-		update_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '' );
+		update_post_meta( $post_id, Spotlight_Posts\META_KEY, '' );
 
 		$this->assertSame( array(), Index\get_ids() );
 	}
@@ -129,7 +129,7 @@ class IndexTest extends TestCase {
 	public function test_meta_delete_removes_from_index(): void {
 		$post_id = $this->create_featured_post();
 
-		delete_post_meta( $post_id, VIP_Featured_Posts\META_KEY );
+		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
 
 		$this->assertSame( array(), Index\get_ids() );
 	}
@@ -141,12 +141,12 @@ class IndexTest extends TestCase {
 	public function test_unrelated_meta_key_is_ignored(): void {
 		$post_id = self::factory()->post->create();
 
-		$version_before = \VIP_Featured_Posts\Query\get_cache_version();
+		$version_before = \Spotlight_Posts\Query\get_cache_version();
 
 		update_post_meta( $post_id, '_something_else', 'value' );
 
 		$this->assertSame( array(), Index\get_ids() );
-		$this->assertSame( $version_before, \VIP_Featured_Posts\Query\get_cache_version() );
+		$this->assertSame( $version_before, \Spotlight_Posts\Query\get_cache_version() );
 	}
 
 	/**
@@ -193,7 +193,7 @@ class IndexTest extends TestCase {
 		$post_id = self::factory()->post->create( array( 'post_status' => 'publish' ) );
 
 		// Flagged in meta, but deliberately absent from the index.
-		add_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '1' );
+		add_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
 		update_option( Index\OPTION, array() );
 
 		$this->assertSame(
@@ -209,7 +209,7 @@ class IndexTest extends TestCase {
 	public function test_drafts_are_indexed(): void {
 		$post_id = self::factory()->post->create( array( 'post_status' => 'draft' ) );
 
-		update_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
 		Index\rebuild();
 
 		$this->assertContains( $post_id, Index\get_ids() );

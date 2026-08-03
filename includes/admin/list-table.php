@@ -6,16 +6,16 @@
  * a per-row toggle for a single change, bulk actions for many at once, Quick Edit
  * alongside the other fields, and a filter to see only what is featured.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Admin\List_Table;
+namespace Spotlight_Posts\Admin\List_Table;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Index;
-use VIP_Featured_Posts\Meta_Box;
+use Spotlight_Posts;
+use Spotlight_Posts\Index;
+use Spotlight_Posts\Meta_Box;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -25,32 +25,32 @@ defined( 'ABSPATH' ) || exit;
  * Registering a column this way also puts it in Screen Options automatically, so
  * editors who do not curate can hide it without any extra work here.
  */
-const COLUMN_ID = 'vip_featured';
+const COLUMN_ID = 'spotlight_featured';
 
 /**
  * Nonce action shared by the row toggle and the bulk handler.
  */
-const NONCE_ACTION = 'vip_featured_toggle';
+const NONCE_ACTION = 'spotlight_toggle';
 
 /**
  * admin-ajax action name for the row toggle.
  */
-const AJAX_ACTION = 'vip_featured_toggle';
+const AJAX_ACTION = 'spotlight_toggle';
 
 /**
  * Bulk action that features the selected posts.
  */
-const BULK_FEATURE = 'vip_feature';
+const BULK_FEATURE = 'spotlight_feature';
 
 /**
  * Bulk action that unfeatures the selected posts.
  */
-const BULK_UNFEATURE = 'vip_unfeature';
+const BULK_UNFEATURE = 'spotlight_unfeature';
 
 /**
  * Query parameter carrying the featured filter.
  */
-const FILTER_PARAM = 'vip_featured_filter';
+const FILTER_PARAM = 'spotlight_filter';
 
 /**
  * Add the Featured column, ahead of the date.
@@ -63,7 +63,7 @@ function add_column( array $columns ): array {
 
 	foreach ( $columns as $key => $label ) {
 		if ( 'date' === $key ) {
-			$updated[ COLUMN_ID ] = __( 'Featured', 'vip-featured-posts' );
+			$updated[ COLUMN_ID ] = __( 'Featured', 'spotlight-posts' );
 		}
 
 		$updated[ $key ] = $label;
@@ -71,7 +71,7 @@ function add_column( array $columns ): array {
 
 	// No date column on this screen, so fall back to appending.
 	if ( ! isset( $updated[ COLUMN_ID ] ) ) {
-		$updated[ COLUMN_ID ] = __( 'Featured', 'vip-featured-posts' );
+		$updated[ COLUMN_ID ] = __( 'Featured', 'spotlight-posts' );
 	}
 
 	return $updated;
@@ -95,28 +95,28 @@ function render_column( string $column, int $post_id ): void {
 		return;
 	}
 
-	$is_featured = '1' === get_post_meta( $post_id, VIP_Featured_Posts\META_KEY, true );
+	$is_featured = '1' === get_post_meta( $post_id, Spotlight_Posts\META_KEY, true );
 
 	if ( ! current_user_can( 'edit_post', $post_id ) ) {
 		printf(
-			'<span class="vip-featured-state">%s</span>',
-			esc_html( $is_featured ? __( 'Featured', 'vip-featured-posts' ) : __( 'Not featured', 'vip-featured-posts' ) )
+			'<span class="spotlight-state">%s</span>',
+			esc_html( $is_featured ? __( 'Featured', 'spotlight-posts' ) : __( 'Not featured', 'spotlight-posts' ) )
 		);
 
 		return;
 	}
 
 	printf(
-		'<button type="button" class="button-link vip-featured-toggle%1$s" data-post-id="%2$d" aria-pressed="%3$s"><span class="screen-reader-text">%4$s</span><span aria-hidden="true" class="vip-featured-icon dashicons %5$s"></span></button>',
+		'<button type="button" class="button-link spotlight-toggle%1$s" data-post-id="%2$d" aria-pressed="%3$s"><span class="screen-reader-text">%4$s</span><span aria-hidden="true" class="spotlight-icon dashicons %5$s"></span></button>',
 		$is_featured ? ' is-featured' : '',
 		(int) $post_id,
 		$is_featured ? 'true' : 'false',
 		esc_attr(
 			$is_featured
 				/* translators: %s: post title. */
-				? sprintf( __( 'Remove %s from featured posts', 'vip-featured-posts' ), get_the_title( $post_id ) )
+				? sprintf( __( 'Remove %s from featured posts', 'spotlight-posts' ), get_the_title( $post_id ) )
 				/* translators: %s: post title. */
-				: sprintf( __( 'Add %s to featured posts', 'vip-featured-posts' ), get_the_title( $post_id ) )
+				: sprintf( __( 'Add %s to featured posts', 'spotlight-posts' ), get_the_title( $post_id ) )
 		),
 		$is_featured ? 'dashicons-star-filled' : 'dashicons-star-empty'
 	);
@@ -129,8 +129,8 @@ function render_column( string $column, int $post_id ): void {
  * @return array<string, string> Actions with ours added.
  */
 function register_bulk_actions( array $actions ): array {
-	$actions[ BULK_FEATURE ]   = __( 'Mark as featured', 'vip-featured-posts' );
-	$actions[ BULK_UNFEATURE ] = __( 'Remove from featured', 'vip-featured-posts' );
+	$actions[ BULK_FEATURE ]   = __( 'Mark as featured', 'spotlight-posts' );
+	$actions[ BULK_UNFEATURE ] = __( 'Remove from featured', 'spotlight-posts' );
 
 	return $actions;
 }
@@ -165,9 +165,9 @@ function handle_bulk_action( string $redirect_to, string $action, array $post_id
 		}
 
 		if ( BULK_FEATURE === $action ) {
-			update_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '1' );
+			update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
 		} else {
-			delete_post_meta( $post_id, VIP_Featured_Posts\META_KEY );
+			delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
 		}
 
 		++$changed;
@@ -175,9 +175,9 @@ function handle_bulk_action( string $redirect_to, string $action, array $post_id
 
 	return add_query_arg(
 		array(
-			'vip_featured_changed' => $changed,
-			'vip_featured_denied'  => $denied,
-			'vip_featured_action'  => $action,
+			'spotlight_changed' => $changed,
+			'spotlight_denied'  => $denied,
+			'spotlight_action'  => $action,
 		),
 		$redirect_to
 	);
@@ -210,22 +210,22 @@ function read_query_param( string $key ): string {
  * Report what a bulk action did.
  */
 function bulk_action_notice(): void {
-	$raw_changed = read_query_param( 'vip_featured_changed' );
+	$raw_changed = read_query_param( 'spotlight_changed' );
 
 	if ( '' === $raw_changed ) {
 		return;
 	}
 
 	$changed = absint( $raw_changed );
-	$denied  = absint( read_query_param( 'vip_featured_denied' ) );
-	$action  = sanitize_key( read_query_param( 'vip_featured_action' ) );
+	$denied  = absint( read_query_param( 'spotlight_denied' ) );
+	$action  = sanitize_key( read_query_param( 'spotlight_action' ) );
 
 	if ( $changed > 0 ) {
 		$message = BULK_UNFEATURE === $action
 			/* translators: %d: number of posts. */
-			? sprintf( _n( '%d post removed from featured.', '%d posts removed from featured.', $changed, 'vip-featured-posts' ), $changed )
+			? sprintf( _n( '%d post removed from featured.', '%d posts removed from featured.', $changed, 'spotlight-posts' ), $changed )
 			/* translators: %d: number of posts. */
-			: sprintf( _n( '%d post marked as featured.', '%d posts marked as featured.', $changed, 'vip-featured-posts' ), $changed );
+			: sprintf( _n( '%d post marked as featured.', '%d posts marked as featured.', $changed, 'spotlight-posts' ), $changed );
 
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
@@ -243,7 +243,7 @@ function bulk_action_notice(): void {
 						'%d post was skipped because you cannot edit it.',
 						'%d posts were skipped because you cannot edit them.',
 						$denied,
-						'vip-featured-posts'
+						'spotlight-posts'
 					),
 					$denied
 				)
@@ -273,7 +273,7 @@ function quick_edit_field( string $column, string $post_type ): void {
 		<div class="inline-edit-col">
 			<label class="alignleft">
 				<input type="checkbox" name="<?php echo esc_attr( Meta_Box\FIELD_NAME ); ?>" value="1" />
-				<span class="checkbox-title"><?php esc_html_e( 'Featured', 'vip-featured-posts' ); ?></span>
+				<span class="checkbox-title"><?php esc_html_e( 'Featured', 'spotlight-posts' ); ?></span>
 			</label>
 		</div>
 	</fieldset>
@@ -293,9 +293,9 @@ function filter_dropdown( string $post_type ): void {
 	$current = sanitize_key( read_query_param( FILTER_PARAM ) );
 
 	$options = array(
-		''             => __( 'All posts', 'vip-featured-posts' ),
-		'featured'     => __( 'Featured only', 'vip-featured-posts' ),
-		'not_featured' => __( 'Not featured', 'vip-featured-posts' ),
+		''             => __( 'All posts', 'spotlight-posts' ),
+		'featured'     => __( 'Featured only', 'spotlight-posts' ),
+		'not_featured' => __( 'Not featured', 'spotlight-posts' ),
 	);
 
 	echo '<select name="' . esc_attr( FILTER_PARAM ) . '">';
@@ -369,32 +369,32 @@ function enqueue_assets( string $hook ): void {
 	wp_enqueue_style( 'dashicons' );
 
 	wp_enqueue_style(
-		'vip-featured-posts-admin',
-		plugins_url( 'assets/admin.css', VIP_FEATURED_POSTS_FILE ),
+		'spotlight-posts-admin',
+		plugins_url( 'assets/admin.css', SPOTLIGHT_POSTS_FILE ),
 		array(),
-		VIP_Featured_Posts\VERSION
+		Spotlight_Posts\VERSION
 	);
 
 	wp_enqueue_script(
-		'vip-featured-posts-admin',
-		plugins_url( 'assets/admin.js', VIP_FEATURED_POSTS_FILE ),
+		'spotlight-posts-admin',
+		plugins_url( 'assets/admin.js', SPOTLIGHT_POSTS_FILE ),
 		array(),
-		VIP_Featured_Posts\VERSION,
+		Spotlight_Posts\VERSION,
 		true
 	);
 
 	wp_localize_script(
-		'vip-featured-posts-admin',
-		'vipFeaturedPosts',
+		'spotlight-posts-admin',
+		'spotlightPosts',
 		array(
 			'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
 			'action'    => AJAX_ACTION,
 			'nonce'     => wp_create_nonce( NONCE_ACTION ),
 			'fieldName' => Meta_Box\FIELD_NAME,
 			'i18n'      => array(
-				'feature'   => __( 'Add to featured posts', 'vip-featured-posts' ),
-				'unfeature' => __( 'Remove from featured posts', 'vip-featured-posts' ),
-				'failed'    => __( 'Could not update the featured flag. Please reload and try again.', 'vip-featured-posts' ),
+				'feature'   => __( 'Add to featured posts', 'spotlight-posts' ),
+				'unfeature' => __( 'Remove from featured posts', 'spotlight-posts' ),
+				'failed'    => __( 'Could not update the featured flag. Please reload and try again.', 'spotlight-posts' ),
 			),
 		)
 	);
@@ -412,19 +412,19 @@ function ajax_toggle(): void {
 	$post_id = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0;
 
 	if ( ! $post_id || ! get_post( $post_id ) ) {
-		wp_send_json_error( array( 'message' => __( 'That post no longer exists.', 'vip-featured-posts' ) ), 404 );
+		wp_send_json_error( array( 'message' => __( 'That post no longer exists.', 'spotlight-posts' ) ), 404 );
 	}
 
 	if ( ! current_user_can( 'edit_post', $post_id ) ) {
-		wp_send_json_error( array( 'message' => __( 'You are not allowed to edit this post.', 'vip-featured-posts' ) ), 403 );
+		wp_send_json_error( array( 'message' => __( 'You are not allowed to edit this post.', 'spotlight-posts' ) ), 403 );
 	}
 
-	$featured = '1' === get_post_meta( $post_id, VIP_Featured_Posts\META_KEY, true );
+	$featured = '1' === get_post_meta( $post_id, Spotlight_Posts\META_KEY, true );
 
 	if ( $featured ) {
-		delete_post_meta( $post_id, VIP_Featured_Posts\META_KEY );
+		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
 	} else {
-		update_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
 	}
 
 	wp_send_json_success(

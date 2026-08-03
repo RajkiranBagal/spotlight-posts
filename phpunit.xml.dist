@@ -13,7 +13,7 @@
 	failOnRisky="true"
 	>
 	<testsuites>
-		<testsuite name="vip-featured-posts">
+		<testsuite name="spotlight-posts">
 			<directory suffix=".php">tests/integration</directory>
 		</testsuite>
 	</testsuites>
@@ -21,7 +21,7 @@
 	<coverage>
 		<include>
 			<directory suffix=".php">includes</directory>
-			<file>vip-featured-posts.php</file>
+			<file>spotlight-posts.php</file>
 		</include>
 	</coverage>
 </phpunit>

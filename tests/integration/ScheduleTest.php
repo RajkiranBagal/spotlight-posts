@@ -2,20 +2,20 @@
 /**
  * Tests for scheduled expiry.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Index;
-use VIP_Featured_Posts\Query;
-use VIP_Featured_Posts\Schedule;
+use Spotlight_Posts;
+use Spotlight_Posts\Index;
+use Spotlight_Posts\Query;
+use Spotlight_Posts\Schedule;
 
 /**
- * @covers \VIP_Featured_Posts\Schedule
+ * @covers \Spotlight_Posts\Schedule
  */
 class ScheduleTest extends TestCase {
 
@@ -90,7 +90,7 @@ class ScheduleTest extends TestCase {
 
 		Schedule\set_expiry( $post_id, time() - HOUR_IN_SECONDS );
 
-		$this->assertSame( '', get_post_meta( $post_id, VIP_Featured_Posts\META_KEY, true ) );
+		$this->assertSame( '', get_post_meta( $post_id, Spotlight_Posts\META_KEY, true ) );
 		$this->assertNotContains( $post_id, Index\get_ids() );
 		$this->assertFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $post_id ) ) );
 	}
@@ -107,7 +107,7 @@ class ScheduleTest extends TestCase {
 
 		Schedule\handle_cron( $post_id );
 
-		$this->assertSame( '', get_post_meta( $post_id, VIP_Featured_Posts\META_KEY, true ) );
+		$this->assertSame( '', get_post_meta( $post_id, Spotlight_Posts\META_KEY, true ) );
 		$this->assertSame( 0, Schedule\get_expiry( $post_id ) );
 		$this->assertNotContains( $post_id, Index\get_ids() );
 	}
@@ -150,7 +150,7 @@ class ScheduleTest extends TestCase {
 
 		Schedule\set_expiry( $post_id, time() + HOUR_IN_SECONDS );
 
-		delete_post_meta( $post_id, VIP_Featured_Posts\META_KEY );
+		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
 
 		$this->assertFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $post_id ) ) );
 		$this->assertSame( 0, Schedule\get_expiry( $post_id ) );

@@ -2,37 +2,37 @@
 /**
  * Editor UI for flagging a post as featured.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Meta_Box;
+namespace Spotlight_Posts\Meta_Box;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Schedule;
+use Spotlight_Posts;
+use Spotlight_Posts\Schedule;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Nonce action for the featured checkbox.
  */
-const NONCE_ACTION = 'vip_featured_posts_save';
+const NONCE_ACTION = 'spotlight_posts_save';
 
 /**
  * Nonce field name posted alongside the checkbox.
  */
-const NONCE_NAME = 'vip_featured_posts_nonce';
+const NONCE_NAME = 'spotlight_posts_nonce';
 
 /**
  * Name of the checkbox input.
  */
-const FIELD_NAME = 'vip_featured_posts_featured';
+const FIELD_NAME = 'spotlight_posts_featured';
 
 /**
  * Name of the "featured until" input.
  */
-const UNTIL_FIELD_NAME = 'vip_featured_posts_until';
+const UNTIL_FIELD_NAME = 'spotlight_posts_until';
 
 /**
  * Register the featured flag as post meta.
@@ -43,7 +43,7 @@ const UNTIL_FIELD_NAME = 'vip_featured_posts_until';
 function register_meta(): void {
 	register_post_meta(
 		'post',
-		VIP_Featured_Posts\META_KEY,
+		Spotlight_Posts\META_KEY,
 		array(
 			'type'              => 'string',
 			'single'            => true,
@@ -84,8 +84,8 @@ function auth_meta( $allowed, $meta_key, $object_id ): bool {
  */
 function add_meta_box(): void {
 	\add_meta_box(
-		'vip-featured-posts',
-		__( 'Featured', 'vip-featured-posts' ),
+		'spotlight-posts',
+		__( 'Featured', 'spotlight-posts' ),
 		__NAMESPACE__ . '\\render',
 		'post',
 		'side',
@@ -99,7 +99,7 @@ function add_meta_box(): void {
  * @param \WP_Post $post Post being edited.
  */
 function render( \WP_Post $post ): void {
-	$is_featured = '1' === get_post_meta( $post->ID, VIP_Featured_Posts\META_KEY, true );
+	$is_featured = '1' === get_post_meta( $post->ID, Spotlight_Posts\META_KEY, true );
 
 	$expiry = Schedule\get_expiry( $post->ID );
 
@@ -120,12 +120,12 @@ function render( \WP_Post $post ): void {
 				value="1"
 				<?php checked( $is_featured ); ?>
 			/>
-			<?php esc_html_e( 'Mark this post as featured', 'vip-featured-posts' ); ?>
+			<?php esc_html_e( 'Mark this post as featured', 'spotlight-posts' ); ?>
 		</label>
 	</p>
 	<p>
 		<label for="<?php echo esc_attr( UNTIL_FIELD_NAME ); ?>">
-			<?php esc_html_e( 'Featured until', 'vip-featured-posts' ); ?>
+			<?php esc_html_e( 'Featured until', 'spotlight-posts' ); ?>
 		</label>
 		<input
 			type="datetime-local"
@@ -136,10 +136,10 @@ function render( \WP_Post $post ): void {
 		/>
 	</p>
 	<p class="description">
-		<?php esc_html_e( 'Leave blank to keep the post featured until it is removed. Times are in the site timezone.', 'vip-featured-posts' ); ?>
+		<?php esc_html_e( 'Leave blank to keep the post featured until it is removed. Times are in the site timezone.', 'spotlight-posts' ); ?>
 	</p>
 	<p class="description">
-		<?php esc_html_e( 'Featured posts appear in the Featured Posts block and the public REST endpoint.', 'vip-featured-posts' ); ?>
+		<?php esc_html_e( 'Featured posts appear in the Featured Posts block and the public REST endpoint.', 'spotlight-posts' ); ?>
 	</p>
 	<?php
 }
@@ -162,7 +162,7 @@ function is_autosave(): bool {
 	 * @param bool $is_autosave Whether this is an autosave.
 	 */
 	return (bool) apply_filters(
-		'vip_featured_posts_is_autosave',
+		'spotlight_posts_is_autosave',
 		defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE
 	);
 }
@@ -200,12 +200,12 @@ function save( int $post_id ): void {
 	if ( '1' !== $submitted ) {
 		// Deleting the flag also clears any pending expiry, via the hook in
 		// Schedule\clear_on_unfeature(). Nothing to do here.
-		delete_post_meta( $post_id, VIP_Featured_Posts\META_KEY );
+		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
 
 		return;
 	}
 
-	update_post_meta( $post_id, VIP_Featured_Posts\META_KEY, '1' );
+	update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
 
 	$until = isset( $_POST[ UNTIL_FIELD_NAME ] )
 		? sanitize_text_field( wp_unslash( $_POST[ UNTIL_FIELD_NAME ] ) )

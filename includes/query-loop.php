@@ -10,17 +10,17 @@
  * So this contributes the one thing core cannot know -- which posts are featured, and in
  * what order -- and lets core own the rest.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Query_Loop;
+namespace Spotlight_Posts\Query_Loop;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Index;
-use VIP_Featured_Posts\Query;
-use VIP_Featured_Posts\Schedule;
+use Spotlight_Posts;
+use Spotlight_Posts\Index;
+use Spotlight_Posts\Query;
+use Spotlight_Posts\Schedule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
  * which is how the filters below recognise our variation rather than every Query Loop on
  * the site.
  */
-const VARIATION = 'vip-featured-posts/featured-query';
+const VARIATION = 'spotlight-posts/featured-query';
 
 /**
  * Post IDs eligible for display, in index order.
@@ -110,7 +110,7 @@ function filter_query_vars( array $query, $block, $page ): array {
  * equivalent -- so this only enqueues that script.
  */
 function enqueue_editor_assets(): void {
-	$asset_file = VIP_FEATURED_POSTS_DIR . 'build/query-loop/index.asset.php';
+	$asset_file = SPOTLIGHT_POSTS_DIR . 'build/query-loop/index.asset.php';
 
 	// Registration no-ops without a build, matching how the dedicated block behaves.
 	if ( ! file_exists( $asset_file ) ) {
@@ -120,14 +120,14 @@ function enqueue_editor_assets(): void {
 	$asset = require $asset_file;
 
 	wp_enqueue_script(
-		'vip-featured-posts-query-loop',
-		plugins_url( 'build/query-loop/index.js', VIP_FEATURED_POSTS_FILE ),
+		'spotlight-posts-query-loop',
+		plugins_url( 'build/query-loop/index.js', SPOTLIGHT_POSTS_FILE ),
 		$asset['dependencies'],
 		$asset['version'],
 		true
 	);
 
-	wp_set_script_translations( 'vip-featured-posts-query-loop', 'vip-featured-posts' );
+	wp_set_script_translations( 'spotlight-posts-query-loop', 'spotlight-posts' );
 }
 
 /**
@@ -137,7 +137,7 @@ function enqueue_editor_assets(): void {
  * core does not forward a variation's namespace to that request -- so the preview would
  * otherwise show every post while the front end showed only featured ones.
  *
- * Registering an explicit `vip_featured` collection parameter closes that gap: the
+ * Registering an explicit `spotlight_featured` collection parameter closes that gap: the
  * variation's edit component sends it, and the filter below applies the same constraint
  * the front end uses.
  *
@@ -145,8 +145,8 @@ function enqueue_editor_assets(): void {
  * @return array Parameters with ours added.
  */
 function add_rest_collection_param( array $args ): array {
-	$args['vip_featured'] = array(
-		'description' => __( 'Limit results to posts flagged as featured.', 'vip-featured-posts' ),
+	$args['spotlight_featured'] = array(
+		'description' => __( 'Limit results to posts flagged as featured.', 'spotlight-posts' ),
 		'type'        => 'boolean',
 		'default'     => false,
 	);
@@ -162,7 +162,7 @@ function add_rest_collection_param( array $args ): array {
  * @return array Query args.
  */
 function filter_rest_query( array $args, $request ): array {
-	if ( ! $request instanceof \WP_REST_Request || ! $request->get_param( 'vip_featured' ) ) {
+	if ( ! $request instanceof \WP_REST_Request || ! $request->get_param( 'spotlight_featured' ) ) {
 		return $args;
 	}
 

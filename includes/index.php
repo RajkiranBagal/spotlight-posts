@@ -8,25 +8,25 @@
  *
  * The trade it makes: an unindexed scan of wp_postmeta on every read becomes a
  * primary-key lookup against a list we already hold. Because the index is derived it
- * is also disposable -- if it is ever wrong, `wp vip-featured rebuild` regenerates it
+ * is also disposable -- if it is ever wrong, `wp spotlight rebuild` regenerates it
  * from the meta.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Index;
+namespace Spotlight_Posts\Index;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Query;
+use Spotlight_Posts;
+use Spotlight_Posts\Query;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Option holding the ordered list of featured post IDs.
  */
-const OPTION = 'vip_featured_post_ids';
+const OPTION = 'spotlight_featured_post_ids';
 
 /**
  * Hard ceiling on how many IDs the index will hold.
@@ -128,7 +128,7 @@ function remove( int $post_id ): void {
  *
  * Posts in any non-trashed status are indexed, not just published ones. The flag
  * belongs to the post regardless of where it sits in an editorial workflow;
- * @see \VIP_Featured_Posts\Query\get_featured_posts() applies the `publish` filter at
+ * @see \Spotlight_Posts\Query\get_featured_posts() applies the `publish` filter at
  * read time. Indexing only published posts would silently drop the flag whenever
  * something went back to draft.
  *
@@ -146,7 +146,7 @@ function rebuild(): array {
 			'post_status'            => array( 'publish', 'future', 'draft', 'pending', 'private' ),
 			'posts_per_page'         => MAX_IDS,
 			'fields'                 => 'ids',
-			'meta_key'               => VIP_Featured_Posts\META_KEY,
+			'meta_key'               => Spotlight_Posts\META_KEY,
 			'meta_value'             => '1', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Maintenance path only; never runs on a front-end request. See docblock.
 			'no_found_rows'          => true,
 			'update_post_meta_cache' => false,
@@ -176,7 +176,7 @@ function rebuild(): array {
  * @param mixed     $meta_value Value that was written.
  */
 function sync_on_write( $meta_id, $object_id, $meta_key, $meta_value ): void {
-	if ( VIP_Featured_Posts\META_KEY !== $meta_key ) {
+	if ( Spotlight_Posts\META_KEY !== $meta_key ) {
 		return;
 	}
 
@@ -199,7 +199,7 @@ function sync_on_write( $meta_id, $object_id, $meta_key, $meta_value ): void {
  * @param mixed $meta_key  Meta key that was deleted.
  */
 function sync_on_delete( $meta_ids, $object_id, $meta_key ): void {
-	if ( VIP_Featured_Posts\META_KEY !== $meta_key ) {
+	if ( Spotlight_Posts\META_KEY !== $meta_key ) {
 		return;
 	}
 
