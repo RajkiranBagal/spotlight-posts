@@ -57,6 +57,7 @@
 @media screen and (max-width: 782px) {
 	.column-spotlight_featured {
 		width: auto;
-		text-align: left;
+		/* Logical property: becomes right-aligned in RTL locales automatically. */
+		text-align: start;
 	}
 }

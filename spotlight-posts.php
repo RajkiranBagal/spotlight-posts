@@ -106,6 +106,13 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
  * surface area in one place rather than hunting through includes.
  */
 function bootstrap(): void {
+	/*
+	 * Loaded on init rather than earlier. Since WordPress 6.7, loading a text domain
+	 * before init triggers a _doing_it_wrong notice, because translations cannot be
+	 * resolved until the locale is settled.
+	 */
+	add_action( 'init', __NAMESPACE__ . '\\load_textdomain' );
+
 	add_action( 'init', __NAMESPACE__ . '\\Meta_Box\\register_meta' );
 	add_action( 'init', __NAMESPACE__ . '\\Schedule\\register_meta' );
 	add_action( 'init', __NAMESPACE__ . '\\Block\\register' );
@@ -189,6 +196,20 @@ function bootstrap(): void {
 	 * correct in those cases; only the cached payload is stale.
 	 */
 	add_action( 'save_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
+}
+
+/**
+ * Load translations for the plugin's own text domain.
+ *
+ * Needed because this is not distributed through wordpress.org, where translations are
+ * fetched and loaded automatically.
+ */
+function load_textdomain(): void {
+	load_plugin_textdomain(
+		'spotlight-posts',
+		false,
+		dirname( plugin_basename( SPOTLIGHT_POSTS_FILE ) ) . '/languages'
+	);
 }
 
 /**
