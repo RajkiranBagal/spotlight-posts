@@ -21,14 +21,14 @@
  * 300-second TTL lapses. Cron closes that in practice; the read-time check guarantees
  * it cannot outlive one TTL.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Schedule;
+namespace Spotlight_Posts\Schedule;
 
-use VIP_Featured_Posts;
+use Spotlight_Posts;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -38,12 +38,12 @@ defined( 'ABSPATH' ) || exit;
  * Stored in UTC. The editor UI converts to and from the site's timezone, because a
  * timestamp is unambiguous and a local datetime string is not.
  */
-const META_KEY = '_vip_featured_until';
+const META_KEY = '_spotlight_featured_until';
 
 /**
  * Cron hook fired when a featured post reaches its expiry.
  */
-const CRON_HOOK = 'vip_featured_posts_expire';
+const CRON_HOOK = 'spotlight_posts_expire';
 
 /**
  * Register the expiry as post meta.
@@ -162,7 +162,7 @@ function unschedule( int $post_id ): void {
  * @param int $post_id Post to expire.
  */
 function expire( int $post_id ): void {
-	delete_post_meta( $post_id, VIP_Featured_Posts\META_KEY );
+	delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
 	delete_post_meta( $post_id, META_KEY );
 }
 
@@ -193,7 +193,7 @@ function handle_cron( $post_id = 0 ): void {
  * @param mixed $meta_key  Meta key that was deleted.
  */
 function clear_on_unfeature( $meta_ids, $object_id, $meta_key ): void {
-	if ( VIP_Featured_Posts\META_KEY !== $meta_key ) {
+	if ( Spotlight_Posts\META_KEY !== $meta_key ) {
 		return;
 	}
 
@@ -229,5 +229,5 @@ function invalidate_on_expiry_change( $meta_id, $object_id, $meta_key ): void {
 		return;
 	}
 
-	VIP_Featured_Posts\Query\bump_cache_version();
+	Spotlight_Posts\Query\bump_cache_version();
 }

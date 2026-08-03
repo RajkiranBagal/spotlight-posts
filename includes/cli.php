@@ -2,14 +2,14 @@
 /**
  * WP-CLI commands.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\CLI;
+namespace Spotlight_Posts\CLI;
 
-use VIP_Featured_Posts\Index;
+use Spotlight_Posts\Index;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,8 +35,8 @@ class Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp vip-featured rebuild
-	 *     wp vip-featured rebuild --dry-run
+	 *     wp spotlight rebuild
+	 *     wp spotlight rebuild --dry-run
 	 *
 	 * @param array $args       Positional arguments. Unused.
 	 * @param array $assoc_args Associative arguments.
@@ -75,7 +75,7 @@ class Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp vip-featured list
+	 *     wp spotlight list
 	 *
 	 * @param array $args       Positional arguments. Unused.
 	 * @param array $assoc_args Associative arguments. Unused.
@@ -108,5 +108,5 @@ class Command {
  * Register the command with WP-CLI.
  */
 function register(): void {
-	\WP_CLI::add_command( 'vip-featured', __NAMESPACE__ . '\\Command' );
+	\WP_CLI::add_command( 'spotlight', __NAMESPACE__ . '\\Command' );
 }

@@ -14,20 +14,20 @@
 import { registerBlockVariation } from '@wordpress/blocks';
 import { __ } from '@wordpress/i18n';
 
-const VARIATION = 'vip-featured-posts/featured-query';
+const VARIATION = 'spotlight-posts/featured-query';
 
 registerBlockVariation( 'core/query', {
 	name: VARIATION,
-	title: __( 'Featured Posts', 'vip-featured-posts' ),
+	title: __( 'Featured Posts', 'spotlight-posts' ),
 	description: __(
 		'Displays posts flagged as featured, in the order set under Posts → Featured Order.',
-		'vip-featured-posts'
+		'spotlight-posts'
 	),
 	icon: 'star-filled',
 	category: 'theme',
 	keywords: [
-		__( 'featured', 'vip-featured-posts' ),
-		__( 'promoted', 'vip-featured-posts' ),
+		__( 'featured', 'spotlight-posts' ),
+		__( 'promoted', 'spotlight-posts' ),
 	],
 
 	attributes: {

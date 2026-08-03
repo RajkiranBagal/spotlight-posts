@@ -1,6 +1,6 @@
 # Roadmap
 
-Taking VIP Featured Posts from its original proof of concept to something that holds up
+Taking Spotlight Posts from its original proof of concept to something that holds up
 under both a VIP code review and a real editorial team.
 
 ## Status
@@ -46,7 +46,7 @@ Nothing watches the meta key itself, so this sequence serves stale data:
 
 ```
 1. Read the featured list                    → cached under featured_v3_n5
-2. update_post_meta( 5, '_vip_featured', 1 ) → no save_post fires
+2. update_post_meta( 5, '_spotlight_featured', 1 ) → no save_post fires
 3. Read again                                 → still v3, still stale
 ```
 
@@ -57,7 +57,7 @@ meta directly without going through `save_post`.
 **Work**
 
 - Invalidate on `added_post_meta`, `updated_post_meta` and `deleted_post_meta`, filtered
-  to `_vip_featured`.
+  to `_spotlight_featured`.
 - Keep the `save_post` hook — it still covers status transitions and deletions.
 - Prove the fix rather than assert it.
 
@@ -74,8 +74,8 @@ reads the repository.
 
 | Layer | Role |
 | --- | --- |
-| `_vip_featured` post meta | Source of truth, per post. Unchanged. |
-| `vip_featured_post_ids` option | Ordered array of IDs. The fast index. |
+| `_spotlight_featured` post meta | Source of truth, per post. Unchanged. |
+| `spotlight_featured_post_ids` option | Ordered array of IDs. The fast index. |
 | WP-CLI `rebuild` command | Regenerates the option from meta. Repair and migration path. |
 
 The query becomes `'post__in' => $ids, 'orderby' => 'post__in'` — a primary-key lookup.

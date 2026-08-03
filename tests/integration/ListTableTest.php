@@ -2,19 +2,19 @@
 /**
  * Tests for the posts list table controls.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Admin\List_Table;
-use VIP_Featured_Posts\Index;
+use Spotlight_Posts;
+use Spotlight_Posts\Admin\List_Table;
+use Spotlight_Posts\Index;
 
 /**
- * @covers \VIP_Featured_Posts\Admin\List_Table
+ * @covers \Spotlight_Posts\Admin\List_Table
  */
 class ListTableTest extends TestCase {
 
@@ -57,7 +57,7 @@ class ListTableTest extends TestCase {
 	 * Is the post under test flagged?
 	 */
 	private function is_featured(): bool {
-		return '1' === get_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, true );
+		return '1' === get_post_meta( $this->post_id, Spotlight_Posts\META_KEY, true );
 	}
 
 	/**
@@ -114,7 +114,7 @@ class ListTableTest extends TestCase {
 		List_Table\render_column( List_Table\COLUMN_ID, $this->post_id );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( 'vip-featured-toggle', $html );
+		$this->assertStringContainsString( 'spotlight-toggle', $html );
 		$this->assertStringContainsString( 'aria-pressed="false"', $html );
 	}
 
@@ -122,7 +122,7 @@ class ListTableTest extends TestCase {
 	 * The pressed state reflects the stored flag.
 	 */
 	public function test_toggle_reflects_featured_state(): void {
-		update_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
 
 		ob_start();
 		List_Table\render_column( List_Table\COLUMN_ID, $this->post_id );
@@ -143,7 +143,7 @@ class ListTableTest extends TestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertStringNotContainsString( '<button', $html );
-		$this->assertStringContainsString( 'vip-featured-state', $html );
+		$this->assertStringContainsString( 'spotlight-state', $html );
 	}
 
 	/**
@@ -175,14 +175,14 @@ class ListTableTest extends TestCase {
 		List_Table\handle_bulk_action( 'http://example.org/', List_Table\BULK_FEATURE, array( $this->post_id, $other ) );
 
 		$this->assertTrue( $this->is_featured() );
-		$this->assertSame( '1', get_post_meta( $other, VIP_Featured_Posts\META_KEY, true ) );
+		$this->assertSame( '1', get_post_meta( $other, Spotlight_Posts\META_KEY, true ) );
 	}
 
 	/**
 	 * Bulk unfeaturing clears the flag.
 	 */
 	public function test_bulk_unfeature_clears_the_selection(): void {
-		update_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
 
 		List_Table\handle_bulk_action( 'http://example.org/', List_Table\BULK_UNFEATURE, array( $this->post_id ) );
 
@@ -201,8 +201,8 @@ class ListTableTest extends TestCase {
 		$redirect = List_Table\handle_bulk_action( 'http://example.org/', List_Table\BULK_FEATURE, array( $this->post_id ) );
 
 		$this->assertFalse( $this->is_featured() );
-		$this->assertStringContainsString( 'vip_featured_denied=1', $redirect );
-		$this->assertStringContainsString( 'vip_featured_changed=0', $redirect );
+		$this->assertStringContainsString( 'spotlight_denied=1', $redirect );
+		$this->assertStringContainsString( 'spotlight_changed=0', $redirect );
 	}
 
 	/**
@@ -219,7 +219,7 @@ class ListTableTest extends TestCase {
 	 * Filtering to featured posts reads the index rather than querying meta.
 	 */
 	public function test_filter_narrows_to_indexed_posts(): void {
-		update_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
 
 		$_GET[ List_Table\FILTER_PARAM ] = 'featured';
 
@@ -234,7 +234,7 @@ class ListTableTest extends TestCase {
 	 * The inverse filter excludes the indexed posts.
 	 */
 	public function test_not_featured_filter_excludes_indexed_posts(): void {
-		update_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
 
 		$_GET[ List_Table\FILTER_PARAM ] = 'not_featured';
 
@@ -281,8 +281,8 @@ class ListTableTest extends TestCase {
 		List_Table\quick_edit_field( List_Table\COLUMN_ID, 'post' );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( \VIP_Featured_Posts\Meta_Box\FIELD_NAME, $html );
-		$this->assertStringContainsString( \VIP_Featured_Posts\Meta_Box\NONCE_NAME, $html );
+		$this->assertStringContainsString( \Spotlight_Posts\Meta_Box\FIELD_NAME, $html );
+		$this->assertStringContainsString( \Spotlight_Posts\Meta_Box\NONCE_NAME, $html );
 	}
 
 	/**

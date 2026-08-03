@@ -23,14 +23,14 @@ registerBlockType( metadata.name, {
 			<>
 				<InspectorControls>
 					<PanelBody
-						title={ __( 'Featured Posts settings', 'vip-featured-posts' ) }
+						title={ __( 'Featured Posts settings', 'spotlight-posts' ) }
 					>
 						<TextControl
 							__nextHasNoMarginBottom
-							label={ __( 'Heading', 'vip-featured-posts' ) }
+							label={ __( 'Heading', 'spotlight-posts' ) }
 							help={ __(
 								'Optional heading shown above the list.',
-								'vip-featured-posts'
+								'spotlight-posts'
 							) }
 							value={ heading }
 							onChange={ ( value ) =>
@@ -41,7 +41,7 @@ registerBlockType( metadata.name, {
 							__nextHasNoMarginBottom
 							label={ __(
 								'Number of posts',
-								'vip-featured-posts'
+								'spotlight-posts'
 							) }
 							value={ numberOfPosts }
 							onChange={ ( value ) =>

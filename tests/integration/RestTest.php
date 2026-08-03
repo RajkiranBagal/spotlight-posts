@@ -2,19 +2,19 @@
 /**
  * Tests for the public REST route.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Query;
-use VIP_Featured_Posts\REST;
+use Spotlight_Posts;
+use Spotlight_Posts\Query;
+use Spotlight_Posts\REST;
 
 /**
- * @covers \VIP_Featured_Posts\REST
+ * @covers \Spotlight_Posts\REST
  */
 class RestTest extends TestCase {
 
@@ -82,10 +82,10 @@ class RestTest extends TestCase {
 		$published = $this->create_featured_post( 'Published' );
 
 		$draft = self::factory()->post->create( array( 'post_status' => 'draft' ) );
-		update_post_meta( $draft, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $draft, Spotlight_Posts\META_KEY, '1' );
 
 		$private = self::factory()->post->create( array( 'post_status' => 'private' ) );
-		update_post_meta( $private, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $private, Spotlight_Posts\META_KEY, '1' );
 
 		$ids = wp_list_pluck( $this->get()->get_data(), 'id' );
 

@@ -2,14 +2,14 @@
 /**
  * Shared base for the integration tests.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts\Index;
+use Spotlight_Posts\Index;
 
 /**
  * Resets the plugin's persistent state between tests.
@@ -46,7 +46,7 @@ abstract class TestCase extends \WP_UnitTestCase {
 			)
 		);
 
-		update_post_meta( $post_id, \VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $post_id, \Spotlight_Posts\META_KEY, '1' );
 
 		return $post_id;
 	}

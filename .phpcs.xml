@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="VIP Featured Posts">
-	<description>WordPress VIP Go coding standards for the VIP Featured Posts plugin.</description>
+<ruleset name="Spotlight Posts">
+	<description>WordPress VIP Go coding standards for the Spotlight Posts plugin.</description>
 
 	<file>.</file>
 
@@ -23,7 +23,7 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="vip-featured-posts"/>
+				<element value="spotlight-posts"/>
 			</property>
 		</properties>
 	</rule>
@@ -31,8 +31,8 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="VIP_Featured_Posts"/>
-				<element value="vip_featured_posts"/>
+				<element value="Spotlight_Posts"/>
+				<element value="spotlight_posts"/>
 			</property>
 		</properties>
 		<!--

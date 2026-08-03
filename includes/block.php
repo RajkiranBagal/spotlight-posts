@@ -2,14 +2,14 @@
 /**
  * Dynamic block registration and server-side rendering.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Block;
+namespace Spotlight_Posts\Block;
 
-use VIP_Featured_Posts\Query;
+use Spotlight_Posts\Query;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  * cloned checkout from fataling before `npm run build` has run.
  */
 function register(): void {
-	$block_path = VIP_FEATURED_POSTS_DIR . 'build/featured-list';
+	$block_path = SPOTLIGHT_POSTS_DIR . 'build/featured-list';
 
 	if ( ! file_exists( $block_path . '/block.json' ) ) {
 		return;
@@ -55,24 +55,24 @@ function render( array $attributes ): string {
 	?>
 	<div <?php echo wp_kses_data( get_block_wrapper_attributes() ); ?>>
 		<?php if ( '' !== $heading ) : ?>
-			<h2 class="wp-block-vip-featured-posts-featured-list__heading">
+			<h2 class="wp-block-spotlight-posts-featured-list__heading">
 				<?php echo esc_html( $heading ); ?>
 			</h2>
 		<?php endif; ?>
 
 		<?php if ( empty( $posts ) ) : ?>
-			<p class="wp-block-vip-featured-posts-featured-list__empty">
-				<?php esc_html_e( 'No featured posts yet.', 'vip-featured-posts' ); ?>
+			<p class="wp-block-spotlight-posts-featured-list__empty">
+				<?php esc_html_e( 'No featured posts yet.', 'spotlight-posts' ); ?>
 			</p>
 		<?php else : ?>
-			<ul class="wp-block-vip-featured-posts-featured-list__list">
+			<ul class="wp-block-spotlight-posts-featured-list__list">
 				<?php foreach ( $posts as $post ) : ?>
-					<li class="wp-block-vip-featured-posts-featured-list__item">
+					<li class="wp-block-spotlight-posts-featured-list__item">
 						<a href="<?php echo esc_url( $post['url'] ); ?>">
 							<?php echo esc_html( $post['title'] ); ?>
 						</a>
 						<?php if ( '' !== $post['excerpt'] ) : ?>
-							<p class="wp-block-vip-featured-posts-featured-list__excerpt">
+							<p class="wp-block-spotlight-posts-featured-list__excerpt">
 								<?php echo esc_html( $post['excerpt'] ); ?>
 							</p>
 						<?php endif; ?>

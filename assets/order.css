@@ -2,14 +2,14 @@
  * Featured posts ordering screen.
  */
 
-.vip-featured-order-list {
+.spotlight-order-list {
 	max-width: 42rem;
 	margin: 1em 0;
 	padding: 0;
 	list-style: none;
 }
 
-.vip-featured-order-item {
+.spotlight-order-item {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -19,38 +19,38 @@
 	border: 1px solid #c3c4c7;
 }
 
-.vip-featured-order-item:first-child {
+.spotlight-order-item:first-child {
 	border-top-left-radius: 3px;
 	border-top-right-radius: 3px;
 }
 
-.vip-featured-order-item:last-child {
+.spotlight-order-item:last-child {
 	margin-bottom: 0;
 	border-bottom-left-radius: 3px;
 	border-bottom-right-radius: 3px;
 }
 
-.vip-featured-order-handle {
+.spotlight-order-handle {
 	color: #8c8f94;
 	cursor: grab;
 }
 
-.vip-featured-order-item.ui-sortable-helper {
+.spotlight-order-item.ui-sortable-helper {
 	box-shadow: 0 2px 8px rgba( 0, 0, 0, 0.15 );
 }
 
-.vip-featured-order-item.ui-sortable-helper .vip-featured-order-handle {
+.spotlight-order-item.ui-sortable-helper .spotlight-order-handle {
 	cursor: grabbing;
 }
 
-.vip-featured-order-placeholder {
+.spotlight-order-placeholder {
 	height: 43px;
 	margin: 0 0 -1px;
 	background: #f0f0f1;
 	border: 1px dashed #c3c4c7;
 }
 
-.vip-featured-order-title {
+.spotlight-order-title {
 	flex: 1 1 auto;
 	min-width: 0;
 	overflow: hidden;
@@ -58,56 +58,56 @@
 	white-space: nowrap;
 }
 
-.vip-featured-order-status {
+.spotlight-order-status {
 	flex: 0 0 auto;
 	color: #646970;
 	font-size: 12px;
 }
 
-.vip-featured-order-controls {
+.spotlight-order-controls {
 	display: flex;
 	flex: 0 0 auto;
 	gap: 6px;
 	align-items: center;
 }
 
-.vip-featured-order-move {
+.spotlight-order-move {
 	color: #2271b1;
 	line-height: 1;
 	padding: 2px;
 }
 
-.vip-featured-order-move .dashicons {
+.spotlight-order-move .dashicons {
 	width: 16px;
 	height: 16px;
 	font-size: 16px;
 }
 
-.vip-featured-order-remove {
+.spotlight-order-remove {
 	color: #b32d2e;
 }
 
-.vip-featured-order-controls button:focus-visible {
+.spotlight-order-controls button:focus-visible {
 	outline: 2px solid #2271b1;
 	outline-offset: 1px;
 }
 
-.vip-featured-order-actions {
+.spotlight-order-actions {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 }
 
 /* Unsaved changes need to be visible without relying on the status text alone. */
-#vip-featured-order-save.is-dirty::after {
+#spotlight-order-save.is-dirty::after {
 	content: " •";
 }
 
-.vip-featured-order-feedback {
+.spotlight-order-feedback {
 	color: #646970;
 }
 
-.vip-featured-order-feedback.is-error {
+.spotlight-order-feedback.is-error {
 	color: #b32d2e;
 	font-weight: 600;
 }

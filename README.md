@@ -1,4 +1,4 @@
-# VIP Featured Posts
+# Spotlight Posts
 
 A WordPress plugin that lets editors flag posts as **featured** — from the editor, the
 posts list, bulk actions or Quick Edit — and surfaces them three ways: a variation of
@@ -18,8 +18,8 @@ It has not run against VIP production traffic, so read "VIP-ready" as *built to 
 standard and verified locally*, not as *proven at scale*.
 
 - **Requires:** WordPress 6.4+, PHP 8.1+
-- **Text domain:** `vip-featured-posts`
-- **Meta key:** `_vip_featured`
+- **Text domain:** `spotlight-posts`
+- **Meta key:** `_spotlight_featured`
 
 📘 **[docs/VIP-GUIDE.md](docs/VIP-GUIDE.md)** — a full walkthrough of how the VIP platform
 works end to end: repo anatomy, the request lifecycle, the local environment, this plugin
@@ -48,7 +48,7 @@ interacts with caching.
 **Posts → Featured Order** arranges the list by dragging, or with keyboard move controls
 for anyone not using a mouse. That order is what the block and the REST endpoint return.
 Curation is gated on `edit_others_posts` rather than post authorship, filterable via
-`vip_featured_posts_manage_capability` — deciding what the homepage promotes and being
+`spotlight_posts_manage_capability` — deciding what the homepage promotes and being
 able to write posts are different jobs.
 
 Flagged posts appear in three places:
@@ -56,7 +56,7 @@ Flagged posts appear in three places:
 - a **Featured Posts** variation of core's Query Loop — full card layouts with featured
   images, titles, excerpts and dates, styled by your theme,
 - the **Featured Posts** block (dynamic, server-rendered, configurable heading and count), and
-- `GET /wp-json/vip-featured/v1/posts?count=5`
+- `GET /wp-json/spotlight/v1/posts?count=5`
 
 All three read the same index and apply the same expiry rule, so they cannot disagree
 about what is featured.
@@ -125,7 +125,7 @@ the layout matches a real VIP application.
 ```bash
 git clone --depth 1 https://github.com/Automattic/vip-go-skeleton.git ~/vip-skeleton
 rsync -a --exclude .git --exclude node_modules --exclude vendor \
-  ./ ~/vip-skeleton/plugins/vip-featured-posts/
+  ./ ~/vip-skeleton/plugins/spotlight-posts/
 
 vip dev-env create --slug vip-featured --title "VIP Featured" \
   --multisite false --php 8.2 --wordpress 6.7 \
@@ -133,7 +133,7 @@ vip dev-env create --slug vip-featured --title "VIP Featured" \
   --elasticsearch n --phpmyadmin n --xdebug n --cron n --mailpit n --photon n
 
 vip dev-env start --slug vip-featured
-vip dev-env exec --slug vip-featured -- wp plugin activate vip-featured-posts
+vip dev-env exec --slug vip-featured -- wp plugin activate spotlight-posts
 vip dev-env exec --slug vip-featured -- wp theme activate twentytwentyfive
 ```
 
@@ -221,9 +221,9 @@ posts at all and maintains the answer on write.
 
 | Layer | Role |
 | --- | --- |
-| `_vip_featured` post meta | Source of truth, per post |
-| `vip_featured_post_ids` option | Ordered index of IDs, maintained on every meta write |
-| `wp vip-featured rebuild` | Regenerates the index from meta |
+| `_spotlight_featured` post meta | Source of truth, per post |
+| `spotlight_featured_post_ids` option | Ordered index of IDs, maintained on every meta write |
+| `wp spotlight rebuild` | Regenerates the index from meta |
 
 The resulting query, captured from the running site:
 
@@ -371,19 +371,19 @@ humans do not review. This repo is the source side of that split.
 ## Layout
 
 ```
-vip-featured-posts/
-├── vip-featured-posts.php   Plugin header, constants, hook registration
+spotlight-posts/
+├── spotlight-posts.php   Plugin header, constants, hook registration
 ├── includes/
 │   ├── schedule.php         Expiry meta, cron scheduling, read-time filter
 │   ├── index.php            Ordered ID index — the reason reads hit the primary key
 │   ├── query.php            Cached, bounded featured-posts query
 │   ├── meta-box.php         Editor checkbox, meta registration, save handler
 │   ├── block.php            Dynamic block registration + server render
-│   ├── rest.php             GET /wp-json/vip-featured/v1/posts
+│   ├── rest.php             GET /wp-json/spotlight/v1/posts
 │   ├── query-loop.php       Featured variation of core's Query Loop
 │   ├── admin/list-table.php Column, bulk actions, Quick Edit, filter, AJAX toggle
 │   ├── admin/order-screen.php  Drag-to-reorder screen
-│   └── cli.php              wp vip-featured rebuild | list
+│   └── cli.php              wp spotlight rebuild | list
 ├── src/featured-list/       Block editor source (compiled to build/)
 ├── .phpcs.xml               WordPress-VIP-Go ruleset, PHP 8.1+
 ├── composer.json            PHPCS tooling

@@ -2,19 +2,19 @@
 /**
  * Tests for the editor save handler's guards.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Meta_Box;
-use VIP_Featured_Posts\Schedule;
+use Spotlight_Posts;
+use Spotlight_Posts\Meta_Box;
+use Spotlight_Posts\Schedule;
 
 /**
- * @covers \VIP_Featured_Posts\Meta_Box
+ * @covers \Spotlight_Posts\Meta_Box
  */
 class MetaBoxTest extends TestCase {
 
@@ -69,7 +69,7 @@ class MetaBoxTest extends TestCase {
 	 * Is the post currently flagged?
 	 */
 	private function is_featured(): bool {
-		return '1' === get_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, true );
+		return '1' === get_post_meta( $this->post_id, Spotlight_Posts\META_KEY, true );
 	}
 
 	/**
@@ -87,7 +87,7 @@ class MetaBoxTest extends TestCase {
 	 * Submitting with the box unticked clears the flag.
 	 */
 	public function test_unchecked_submission_clears_the_flag(): void {
-		update_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
 
 		$this->post_form( false );
 
@@ -139,18 +139,18 @@ class MetaBoxTest extends TestCase {
 	 * autosaves a post whose form fields are not present.
 	 */
 	public function test_autosave_is_ignored(): void {
-		update_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
 
 		$this->post_form( false );
 
 		// Deliberately the filter and not define( 'DOING_AUTOSAVE' ): a constant cannot
 		// be unset, so defining it here would silently disable saving for every test
 		// that ran afterwards in this process.
-		add_filter( 'vip_featured_posts_is_autosave', '__return_true' );
+		add_filter( 'spotlight_posts_is_autosave', '__return_true' );
 
 		Meta_Box\save( $this->post_id );
 
-		remove_filter( 'vip_featured_posts_is_autosave', '__return_true' );
+		remove_filter( 'spotlight_posts_is_autosave', '__return_true' );
 
 		$this->assertTrue(
 			$this->is_featured(),
@@ -246,7 +246,7 @@ class MetaBoxTest extends TestCase {
 	 * Unfeaturing clears the expiry too, rather than leaving an orphaned event armed.
 	 */
 	public function test_unfeaturing_clears_the_expiry(): void {
-		update_post_meta( $this->post_id, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
 		Schedule\set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
 
 		$this->post_form( false );

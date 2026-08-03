@@ -1,5 +1,5 @@
 {
-	"name": "vip-featured-posts",
+	"name": "spotlight-posts",
 	"version": "1.0.0",
 	"description": "Flag posts as featured and surface them through a Query Loop variation, a dynamic block, and a public REST endpoint.",
 	"license": "GPL-2.0-or-later",

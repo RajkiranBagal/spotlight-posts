@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:       VIP Featured Posts
- * Plugin URI:        https://github.com/RajkiranBagal/vip-featured-posts
+ * Plugin Name:       Spotlight Posts
+ * Plugin URI:        https://github.com/RajkiranBagal/spotlight-posts
  * Description:       Lets editors flag posts as featured, then surfaces them through a Query Loop variation, a dynamic block, and a public REST endpoint.
  * Version:           1.0.0
  * Requires at least: 6.4
@@ -9,14 +9,14 @@
  * Author:            Rajkiran Bagal
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       vip-featured-posts
+ * Text Domain:       spotlight-posts
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts;
+namespace Spotlight_Posts;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || exit;
  * Underscore-prefixed so it is treated as protected meta and never surfaces in
  * the default custom fields UI.
  */
-const META_KEY = '_vip_featured';
+const META_KEY = '_spotlight_featured';
 
 /**
  * Plugin version, also used to bust the built block asset cache.
@@ -36,28 +36,28 @@ const VERSION = '1.0.0';
 /**
  * Absolute path to the plugin directory, with a trailing slash.
  */
-define( 'VIP_FEATURED_POSTS_DIR', plugin_dir_path( __FILE__ ) );
+define( 'SPOTLIGHT_POSTS_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
  * Absolute path to this file, for building asset URLs.
  */
-define( 'VIP_FEATURED_POSTS_FILE', __FILE__ );
+define( 'SPOTLIGHT_POSTS_FILE', __FILE__ );
 
-require_once VIP_FEATURED_POSTS_DIR . 'includes/schedule.php';
-require_once VIP_FEATURED_POSTS_DIR . 'includes/index.php';
-require_once VIP_FEATURED_POSTS_DIR . 'includes/query.php';
-require_once VIP_FEATURED_POSTS_DIR . 'includes/meta-box.php';
-require_once VIP_FEATURED_POSTS_DIR . 'includes/block.php';
-require_once VIP_FEATURED_POSTS_DIR . 'includes/rest.php';
-require_once VIP_FEATURED_POSTS_DIR . 'includes/query-loop.php';
+require_once SPOTLIGHT_POSTS_DIR . 'includes/schedule.php';
+require_once SPOTLIGHT_POSTS_DIR . 'includes/index.php';
+require_once SPOTLIGHT_POSTS_DIR . 'includes/query.php';
+require_once SPOTLIGHT_POSTS_DIR . 'includes/meta-box.php';
+require_once SPOTLIGHT_POSTS_DIR . 'includes/block.php';
+require_once SPOTLIGHT_POSTS_DIR . 'includes/rest.php';
+require_once SPOTLIGHT_POSTS_DIR . 'includes/query-loop.php';
 
 if ( is_admin() ) {
-	require_once VIP_FEATURED_POSTS_DIR . 'includes/admin/list-table.php';
-	require_once VIP_FEATURED_POSTS_DIR . 'includes/admin/order-screen.php';
+	require_once SPOTLIGHT_POSTS_DIR . 'includes/admin/list-table.php';
+	require_once SPOTLIGHT_POSTS_DIR . 'includes/admin/order-screen.php';
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-	require_once VIP_FEATURED_POSTS_DIR . 'includes/cli.php';
+	require_once SPOTLIGHT_POSTS_DIR . 'includes/cli.php';
 }
 
 /**

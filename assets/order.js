@@ -9,20 +9,20 @@
 ( function ( $ ) {
 	'use strict';
 
-	var config = window.vipFeaturedOrder || {};
+	var config = window.spotlightOrder || {};
 
 	if ( ! config.ajaxUrl ) {
 		return;
 	}
 
-	var $list = $( '#vip-featured-order-list' );
+	var $list = $( '#spotlight-order-list' );
 
 	if ( ! $list.length ) {
 		return;
 	}
 
-	var $feedback = $( '.vip-featured-order-feedback' );
-	var $save = $( '#vip-featured-order-save' );
+	var $feedback = $( '.spotlight-order-feedback' );
+	var $save = $( '#spotlight-order-save' );
 
 	/**
 	 * Announce status. The container is aria-live, so this reaches screen readers.
@@ -59,20 +59,20 @@
 	}
 
 	$list.sortable( {
-		handle: '.vip-featured-order-handle',
+		handle: '.spotlight-order-handle',
 		axis: 'y',
 		cursor: 'grabbing',
-		placeholder: 'vip-featured-order-placeholder',
+		placeholder: 'spotlight-order-placeholder',
 		forcePlaceholderSize: true,
 		update: markDirty,
 	} );
 
 	// Keyboard-reachable equivalent of dragging.
-	$list.on( 'click', '.vip-featured-order-move', function () {
+	$list.on( 'click', '.spotlight-order-move', function () {
 		var $button = $( this );
-		var $item = $button.closest( '.vip-featured-order-item' );
+		var $item = $button.closest( '.spotlight-order-item' );
 		var goingUp = $button.attr( 'data-direction' ) === 'up';
-		var $sibling = goingUp ? $item.prev( '.vip-featured-order-item' ) : $item.next( '.vip-featured-order-item' );
+		var $sibling = goingUp ? $item.prev( '.spotlight-order-item' ) : $item.next( '.spotlight-order-item' );
 
 		if ( ! $sibling.length ) {
 			return;
@@ -117,9 +117,9 @@
 			} );
 	} );
 
-	$list.on( 'click', '.vip-featured-order-remove', function () {
+	$list.on( 'click', '.spotlight-order-remove', function () {
 		var $button = $( this );
-		var $item = $button.closest( '.vip-featured-order-item' );
+		var $item = $button.closest( '.spotlight-order-item' );
 
 		$button.prop( 'disabled', true );
 

@@ -262,8 +262,8 @@ Note what's *missing*: WordPress core. It lives at `/wp` inside the image and is
 mounted from disk — mirroring production, where core is the platform's concern.
 
 > **Why we copy instead of symlink.** Bind mounts don't follow symlinks pointing outside
-> the mounted directory. A symlink at `plugins/vip-featured-posts` pointing to
-> `~/Documents/vip-featured-posts` resolves to a path the container can't see. Hence
+> the mounted directory. A symlink at `plugins/spotlight-posts` pointing to
+> `~/Documents/spotlight-posts` resolves to a path the container can't see. Hence
 > `rsync` — and hence re-running it after edits.
 
 ---
@@ -366,10 +366,10 @@ wp-admin without typing anything. Default user is `vipgo`.
 
 ```bash
 rsync -a --exclude .git --exclude node_modules --exclude vendor \
-  ~/Documents/vip-featured-posts/ \
-  ~/Documents/vip-skeleton/plugins/vip-featured-posts/
+  ~/Documents/spotlight-posts/ \
+  ~/Documents/vip-skeleton/plugins/spotlight-posts/
 
-vip dev-env exec --slug vip-featured -- wp plugin activate vip-featured-posts
+vip dev-env exec --slug vip-featured -- wp plugin activate spotlight-posts
 ```
 
 `rsync -a` is archive mode — recursive, preserving permissions and timestamps. The trailing
@@ -385,7 +385,7 @@ separates VIP-CLI's own flags from the command being passed through.
 
 | File | Role |
 | --- | --- |
-| `vip-featured-posts.php` | Plugin header, constants, and every `add_action` in one place so a reviewer sees the whole surface area at a glance. |
+| `spotlight-posts.php` | Plugin header, constants, and every `add_action` in one place so a reviewer sees the whole surface area at a glance. |
 | `includes/query.php` | The cached, bounded query. The performance-critical file. |
 | `includes/meta-box.php` | Editor checkbox, meta registration, guarded save handler. |
 | `includes/block.php` | Block registration and server-side rendering with escaping. |
@@ -407,7 +407,7 @@ before doing anything. It belongs in **every** PHP file.
 
 ### The flag itself
 
-Featured status is post meta under `_vip_featured`. The leading underscore makes it
+Featured status is post meta under `_spotlight_featured`. The leading underscore makes it
 *protected* meta — WordPress hides it from the generic Custom Fields UI, so editors use the
 checkbox rather than typing raw keys.
 
@@ -506,15 +506,15 @@ Copy the **LOGIN URL** and paste it into your browser — it logs you straight i
 ### Test the REST endpoint
 
 ```bash
-curl -sS "http://vip-featured.vipdev.lndo.site/wp-json/vip-featured/v1/posts"
+curl -sS "http://vip-featured.vipdev.lndo.site/wp-json/spotlight/v1/posts"
 ```
 
 Then try to break the validation — all of these return HTTP 400:
 
 ```bash
-curl -sS ".../wp-json/vip-featured/v1/posts?count=0"
-curl -sS ".../wp-json/vip-featured/v1/posts?count=99"
-curl -sS ".../wp-json/vip-featured/v1/posts?count=abc"
+curl -sS ".../wp-json/spotlight/v1/posts?count=0"
+curl -sS ".../wp-json/spotlight/v1/posts?count=99"
+curl -sS ".../wp-json/spotlight/v1/posts?count=abc"
 ```
 
 `-sS` means silent but still show errors — suppresses the progress meter without hiding
@@ -524,10 +524,10 @@ real failures.
 
 ```bash
 vip dev-env exec --slug vip-featured -- wp eval '
-$v = wp_cache_get( "cache_version", "vip_featured_posts" );
+$v = wp_cache_get( "cache_version", "spotlight_posts" );
 echo "external cache: " . ( wp_using_ext_object_cache() ? "memcached" : "none" ) . "\n";
 echo "version: $v\n";
-echo "cached: " . ( is_array( wp_cache_get( "featured_v{$v}_n5", "vip_featured_posts" ) ) ? "yes" : "no" ) . "\n";
+echo "cached: " . ( is_array( wp_cache_get( "featured_v{$v}_n5", "spotlight_posts" ) ) ? "yes" : "no" ) . "\n";
 '
 ```
 
@@ -549,8 +549,8 @@ you re-sync**:
 
 ```bash
 rsync -a --exclude .git --exclude node_modules --exclude vendor \
-  ~/Documents/vip-featured-posts/ \
-  ~/Documents/vip-skeleton/plugins/vip-featured-posts/
+  ~/Documents/spotlight-posts/ \
+  ~/Documents/vip-skeleton/plugins/spotlight-posts/
 ```
 
 If you changed JavaScript, run `npm run build` before the rsync. For sustained JS work
@@ -692,7 +692,7 @@ vip dev-env shell   --slug vip-featured     # shell inside the container
 vip dev-env exec --slug vip-featured -- wp plugin list
 vip dev-env exec --slug vip-featured -- wp theme list
 vip dev-env exec --slug vip-featured -- wp post list --post_type=post
-vip dev-env exec --slug vip-featured -- wp post meta get 5 _vip_featured
+vip dev-env exec --slug vip-featured -- wp post meta get 5 _spotlight_featured
 vip dev-env exec --slug vip-featured -- wp cache flush
 ```
 

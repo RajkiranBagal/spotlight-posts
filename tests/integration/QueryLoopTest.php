@@ -2,19 +2,19 @@
 /**
  * Tests for the Query Loop variation.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts\Index;
-use VIP_Featured_Posts\Query_Loop;
-use VIP_Featured_Posts\Schedule;
+use Spotlight_Posts\Index;
+use Spotlight_Posts\Query_Loop;
+use Spotlight_Posts\Schedule;
 
 /**
- * @covers \VIP_Featured_Posts\Query_Loop
+ * @covers \Spotlight_Posts\Query_Loop
  */
 class QueryLoopTest extends TestCase {
 
@@ -157,7 +157,7 @@ class QueryLoopTest extends TestCase {
 		$post_id = $this->create_featured_post();
 
 		$request = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
-		$request->set_param( 'vip_featured', true );
+		$request->set_param( 'spotlight_featured', true );
 
 		$args = Query_Loop\filter_rest_query( array( 'post_type' => 'post' ), $request );
 
@@ -183,8 +183,8 @@ class QueryLoopTest extends TestCase {
 	public function test_rest_collection_param_is_registered(): void {
 		$params = Query_Loop\add_rest_collection_param( array() );
 
-		$this->assertArrayHasKey( 'vip_featured', $params );
-		$this->assertSame( 'boolean', $params['vip_featured']['type'] );
-		$this->assertFalse( $params['vip_featured']['default'] );
+		$this->assertArrayHasKey( 'spotlight_featured', $params );
+		$this->assertSame( 'boolean', $params['spotlight_featured']['type'] );
+		$this->assertFalse( $params['spotlight_featured']['default'] );
 	}
 }

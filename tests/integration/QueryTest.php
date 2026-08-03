@@ -2,19 +2,19 @@
 /**
  * Tests for the cached featured-posts query.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Index;
-use VIP_Featured_Posts\Query;
+use Spotlight_Posts;
+use Spotlight_Posts\Index;
+use Spotlight_Posts\Query;
 
 /**
- * @covers \VIP_Featured_Posts\Query
+ * @covers \Spotlight_Posts\Query
  */
 class QueryTest extends TestCase {
 
@@ -62,7 +62,7 @@ class QueryTest extends TestCase {
 		$published = $this->create_featured_post( 'Published' );
 
 		$draft = self::factory()->post->create( array( 'post_status' => 'draft' ) );
-		update_post_meta( $draft, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $draft, Spotlight_Posts\META_KEY, '1' );
 
 		$ids = wp_list_pluck( Query\get_featured_posts( 5 ), 'id' );
 
@@ -133,7 +133,7 @@ class QueryTest extends TestCase {
 		$this->assertSame( array( $first ), wp_list_pluck( Query\get_featured_posts( 5 ), 'id' ) );
 
 		$second = self::factory()->post->create( array( 'post_status' => 'publish' ) );
-		update_post_meta( $second, VIP_Featured_Posts\META_KEY, '1' );
+		update_post_meta( $second, Spotlight_Posts\META_KEY, '1' );
 
 		$this->assertSame(
 			array( $second, $first ),
@@ -150,7 +150,7 @@ class QueryTest extends TestCase {
 
 		$this->assertCount( 1, Query\get_featured_posts( 5 ) );
 
-		delete_post_meta( $post_id, VIP_Featured_Posts\META_KEY );
+		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
 
 		$this->assertSame( array(), Query\get_featured_posts( 5 ) );
 	}

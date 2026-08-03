@@ -2,19 +2,19 @@
 /**
  * Tests for the featured ordering screen.
  *
- * @package VIP_Featured_Posts
+ * @package Spotlight_Posts
  */
 
 declare( strict_types = 1 );
 
-namespace VIP_Featured_Posts\Tests;
+namespace Spotlight_Posts\Tests;
 
-use VIP_Featured_Posts;
-use VIP_Featured_Posts\Admin\Order_Screen;
-use VIP_Featured_Posts\Index;
+use Spotlight_Posts;
+use Spotlight_Posts\Admin\Order_Screen;
+use Spotlight_Posts\Index;
 
 /**
- * @covers \VIP_Featured_Posts\Admin\Order_Screen
+ * @covers \Spotlight_Posts\Admin\Order_Screen
  */
 class OrderScreenTest extends TestCase {
 
@@ -37,7 +37,7 @@ class OrderScreenTest extends TestCase {
 	public function tear_down(): void {
 		$_POST = array();
 
-		remove_all_filters( 'vip_featured_posts_manage_capability' );
+		remove_all_filters( 'spotlight_posts_manage_capability' );
 
 		parent::tear_down();
 	}
@@ -54,7 +54,7 @@ class OrderScreenTest extends TestCase {
 	 */
 	public function test_capability_is_filterable(): void {
 		add_filter(
-			'vip_featured_posts_manage_capability',
+			'spotlight_posts_manage_capability',
 			static function (): string {
 				return 'manage_options';
 			}
@@ -102,7 +102,7 @@ class OrderScreenTest extends TestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( 'No posts are featured yet', $html );
-		$this->assertStringNotContainsString( 'vip-featured-order-save', $html );
+		$this->assertStringNotContainsString( 'spotlight-order-save', $html );
 	}
 
 	/**
@@ -194,14 +194,14 @@ class OrderScreenTest extends TestCase {
 
 		$this->assertSame(
 			array( $a, $b ),
-			wp_list_pluck( \VIP_Featured_Posts\Query\get_featured_posts( 5 ), 'id' )
+			wp_list_pluck( \Spotlight_Posts\Query\get_featured_posts( 5 ), 'id' )
 		);
 
 		$this->save_order( array( $b, $a ) );
 
 		$this->assertSame(
 			array( $b, $a ),
-			wp_list_pluck( \VIP_Featured_Posts\Query\get_featured_posts( 5 ), 'id' ),
+			wp_list_pluck( \Spotlight_Posts\Query\get_featured_posts( 5 ), 'id' ),
 			'The reordered list should be visible immediately.'
 		);
 	}
@@ -215,7 +215,7 @@ class OrderScreenTest extends TestCase {
 
 		Index\set_ids( array( $a, $b ) );
 
-		delete_post_meta( $a, VIP_Featured_Posts\META_KEY );
+		delete_post_meta( $a, Spotlight_Posts\META_KEY );
 
 		$this->assertSame( array( $b ), Index\get_ids() );
 	}

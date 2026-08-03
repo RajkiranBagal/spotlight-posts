@@ -9,7 +9,7 @@
 ( function () {
 	'use strict';
 
-	var config = window.vipFeaturedPosts || {};
+	var config = window.spotlightPosts || {};
 
 	if ( ! config.ajaxUrl ) {
 		return;
@@ -22,7 +22,7 @@
 	 * @param {boolean}     featured Whether the post is now featured.
 	 */
 	function setState( button, featured ) {
-		var icon = button.querySelector( '.vip-featured-icon' );
+		var icon = button.querySelector( '.spotlight-icon' );
 		var label = button.querySelector( '.screen-reader-text' );
 
 		button.classList.toggle( 'is-featured', featured );
@@ -93,7 +93,7 @@
 
 	// Delegated, so rows replaced by Quick Edit keep working without rebinding.
 	document.addEventListener( 'click', function ( event ) {
-		var button = event.target.closest( '.vip-featured-toggle' );
+		var button = event.target.closest( '.spotlight-toggle' );
 
 		if ( button ) {
 			event.preventDefault();
@@ -135,7 +135,7 @@
 				return result;
 			}
 
-			var toggleButton = row.querySelector( '.vip-featured-toggle' );
+			var toggleButton = row.querySelector( '.spotlight-toggle' );
 			var checkbox = editRow.querySelector(
 				'input[name="' + config.fieldName + '"]'
 			);
