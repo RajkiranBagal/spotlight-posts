@@ -69,6 +69,32 @@ function bump_cache_version(): void {
 }
 
 /**
+ * Invalidate the cache when the featured flag itself is written.
+ *
+ * save_post only fires when a post is saved through an editing flow. Meta can be
+ * written without that ever happening -- WP-CLI, the REST meta endpoints, an admin-ajax
+ * toggle, or another plugin calling update_post_meta() directly. Hooking the meta write
+ * itself means invalidation follows the data rather than a proxy for it.
+ *
+ * Shared by added_/updated_/deleted_post_meta. Their first argument differs -- a single
+ * meta ID for add and update, an array of them for delete -- but the meta key is always
+ * third, and it is the only argument this needs. Nothing is type-declared, because a
+ * bad value should fall through the early return rather than raise a TypeError inside a
+ * hook callback.
+ *
+ * @param int|int[] $meta_id   Meta row ID, or IDs when deleting. Unused.
+ * @param int       $object_id Post the meta belongs to. Unused.
+ * @param mixed     $meta_key  Meta key that was written.
+ */
+function bump_cache_version_on_meta( $meta_id, $object_id, $meta_key ): void {
+	if ( VIP_Featured_Posts\META_KEY !== $meta_key ) {
+		return;
+	}
+
+	bump_cache_version();
+}
+
+/**
  * Fetch the featured posts as a lightweight array.
  *
  * Returns only the fields a consumer actually renders, so we cache a small
