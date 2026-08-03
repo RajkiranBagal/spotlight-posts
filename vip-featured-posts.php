@@ -43,6 +43,7 @@ define( 'VIP_FEATURED_POSTS_DIR', plugin_dir_path( __FILE__ ) );
  */
 define( 'VIP_FEATURED_POSTS_FILE', __FILE__ );
 
+require_once VIP_FEATURED_POSTS_DIR . 'includes/schedule.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/index.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/query.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/meta-box.php';
@@ -66,7 +67,22 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
  */
 function bootstrap(): void {
 	add_action( 'init', __NAMESPACE__ . '\\Meta_Box\\register_meta' );
+	add_action( 'init', __NAMESPACE__ . '\\Schedule\\register_meta' );
 	add_action( 'init', __NAMESPACE__ . '\\Block\\register' );
+
+	/*
+	 * Scheduled expiry. The cron event clears the flag at the expiry moment, which
+	 * routes through the same index sync as any other unfeature -- so the cached lists
+	 * are invalidated then, rather than waiting for a TTL to lapse.
+	 */
+	add_action( Schedule\CRON_HOOK, __NAMESPACE__ . '\\Schedule\\handle_cron' );
+	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Schedule\\clear_on_unfeature', 10, 3 );
+	add_action( 'deleted_post', __NAMESPACE__ . '\\Schedule\\clear_on_delete' );
+
+	// An expiry change alters what the lists will contain, so it invalidates them too.
+	add_action( 'added_post_meta', __NAMESPACE__ . '\\Schedule\\invalidate_on_expiry_change', 10, 3 );
+	add_action( 'updated_post_meta', __NAMESPACE__ . '\\Schedule\\invalidate_on_expiry_change', 10, 3 );
+	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Schedule\\invalidate_on_expiry_change', 10, 3 );
 
 	add_action( 'add_meta_boxes_post', __NAMESPACE__ . '\\Meta_Box\\add_meta_box' );
 	add_action( 'save_post_post', __NAMESPACE__ . '\\Meta_Box\\save' );

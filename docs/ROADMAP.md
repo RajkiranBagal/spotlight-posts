@@ -116,7 +116,12 @@ Primarily client value, but it demonstrates well.
 - AJAX row toggle, with a nonce and a per-object `current_user_can( 'edit_post', $id )`.
 - Drag-to-reorder admin screen — nearly free once Phase 1 stores an ordered array.
 - **Scheduling**: feature a post until a given date. A common editorial request, and it
-  constrains caching — the cached list must never outlive the nearest expiry.
+  turned out to be a caching problem rather than a UI one. A cron event clears the flag
+  at the expiry moment, which routes through the same index sync as any other unfeature
+  and so invalidates the cached lists then. A read-time check is the safety net for a
+  cron run that has not happened yet. The non-obvious part, found against the running
+  site rather than in a test: *writing* an expiry has to invalidate the cache too,
+  because the read-time check only runs on a cache miss.
 
 The list table already primes the post meta cache for the current page, so reading meta
 per row costs no additional queries. Do not hand-roll a lookup.

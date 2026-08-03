@@ -34,6 +34,10 @@ Editors can flag a post four ways, because different jobs want different ones:
 A **Featured / Not featured** filter sits above the list table, and the column appears in
 Screen Options so anyone who does not curate can hide it.
 
+A post can also be featured **until a given date and time**, set alongside the checkbox in
+the editor. See [scheduled expiry](#scheduled-expiry-is-a-caching-problem) for how that
+interacts with caching.
+
 **Posts → Featured Order** arranges the list by dragging, or with keyboard move controls
 for anyone not using a mouse. That order is what the block and the REST endpoint return.
 Curation is gated on `edit_others_posts` rather than post authorship, filterable via
@@ -90,8 +94,8 @@ bin/install-wp-tests.sh wordpress_test wordpress wordpress 127.0.0.1:50400 6.7 t
 WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test
 ```
 
-73 tests cover the save guards, the count clamp, REST validation, cache invalidation,
-index ordering, the draft round-trip, the list-table controls and the ordering screen. They have been
+95 tests cover the save guards, the count clamp, REST validation, cache invalidation,
+index ordering, the draft round-trip, the list-table controls, the ordering screen and scheduled expiry. They have been
 mutation-checked: removing the capability check, the meta-key filter or the count clamp
 each turns the suite red.
 
@@ -237,6 +241,38 @@ precisely because oversized autoloaded options degrade every page load.
 search by meta. It runs on activation and on demand via WP-CLI, never on a front-end
 request.
 
+### Scheduled expiry is a caching problem
+
+"Feature this until Friday" sounds like a UI feature. It is really a question about how
+long a cached list is allowed to disagree with reality. Two mechanisms cover it, and each
+covers the other's weakness.
+
+**A cron event fires at the expiry moment** and clears the flag. Because it clears the
+flag through `delete_post_meta()` rather than editing the index directly, it takes the
+same path as any other unfeature — the index sync removes the post and invalidates the
+cached lists *at the expiry moment*, not whenever the TTL happens to lapse.
+
+**A read-time check filters expired posts** before the payload is cached. WP-Cron is
+request-driven on stock WordPress, so on a quiet site an event can fire late; VIP backs
+it with real cron, where this rarely matters. Without the read-time check, a late cron
+would leave an expired post visible indefinitely.
+
+**Writing an expiry invalidates the cached lists too.** This one was found against the
+running site rather than in a test, and it is the non-obvious part: the read-time check
+only runs on a cache *miss*. Setting an expiry without invalidating meant a cache hit
+returned before the check was ever reached, so a post expired "now" stayed visible until
+the TTL lapsed. Changing when something expires changes what the list contains, so it has
+to invalidate exactly like changing the flag does.
+
+The residual window, stated plainly: if a post expires just after a list is cached *and*
+cron never fires, it can remain visible for up to the 300-second TTL. Cron closes that in
+practice; the read-time check guarantees it cannot outlive a single TTL.
+
+Expiries are stored as UTC timestamps and converted to the site's timezone for display.
+A `datetime-local` input sends wall-clock time with no offset, so interpreting it as
+server time would make "featured until 5pm" land at a different real moment depending on
+where the server sits.
+
 ### Escaping is late and context-matched
 
 Nothing is pre-escaped and stashed. Every dynamic value is escaped at the point of
@@ -294,6 +330,7 @@ humans do not review. This repo is the source side of that split.
 vip-featured-posts/
 ├── vip-featured-posts.php   Plugin header, constants, hook registration
 ├── includes/
+│   ├── schedule.php         Expiry meta, cron scheduling, read-time filter
 │   ├── index.php            Ordered ID index — the reason reads hit the primary key
 │   ├── query.php            Cached, bounded featured-posts query
 │   ├── meta-box.php         Editor checkbox, meta registration, save handler
