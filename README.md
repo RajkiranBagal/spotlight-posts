@@ -1,14 +1,21 @@
 # VIP Featured Posts
 
-A small WordPress plugin that lets editors flag posts as **featured** — from the editor,
-the posts list, bulk actions or Quick Edit — and surfaces them three ways: a variation of
+A WordPress plugin that lets editors flag posts as **featured** — from the editor, the
+posts list, bulk actions or Quick Edit — and surfaces them three ways: a variation of
 core's Query Loop, a dedicated dynamic block, and a public REST endpoint.
 
-> **This is a self-directed proof of concept.** It is not a client deliverable and
-> is not affiliated with WordPress VIP. I built it to demonstrate the habits a VIP
-> engagement actually depends on — object caching, bounded `WP_Query`, disciplined
-> escaping and sanitization, nonce plus capability checks, and a clean
-> `WordPress-VIP-Go` PHPCS run.
+> **Not affiliated with WordPress VIP or Automattic.** The name and the `vip_` prefixes
+> refer to the platform this targets, not to its authorship. It is independent work,
+> built to the standards a VIP engagement depends on: object caching, primary-key
+> queries, disciplined escaping and sanitization, nonce plus capability checks, and a
+> clean `WordPress-VIP-Go` run.
+
+**What that rests on:** 106 integration tests against a real WordPress install · CI on
+PHP 8.1 / 8.2 / 8.3 and WordPress trunk · zero PHPCS findings · every feature exercised
+end to end in a VIP local environment.
+
+It has not run against VIP production traffic, so read "VIP-ready" as *built to the
+standard and verified locally*, not as *proven at scale*.
 
 - **Requires:** WordPress 6.4+, PHP 8.1+
 - **Text domain:** `vip-featured-posts`

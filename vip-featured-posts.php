@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       VIP Featured Posts
  * Plugin URI:        https://github.com/RajkiranBagal/vip-featured-posts
- * Description:       Lets editors flag posts as featured, then surfaces them through a dynamic block and a public REST endpoint.
+ * Description:       Lets editors flag posts as featured, then surfaces them through a Query Loop variation, a dynamic block, and a public REST endpoint.
  * Version:           1.0.0
  * Requires at least: 6.4
  * Requires PHP:      8.1

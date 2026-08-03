@@ -1,7 +1,22 @@
 # Roadmap
 
-Taking VIP Featured Posts from proof of concept to something that holds up under both
-a VIP code review and a real editorial team.
+Taking VIP Featured Posts from its original proof of concept to something that holds up
+under both a VIP code review and a real editorial team.
+
+## Status
+
+| Phase | | |
+| --- | --- | --- |
+| 0 | Correctness — cache invalidation follows the data | ✅ done |
+| 1 | Ordered ID index, PHPUnit suite, CI | ✅ done |
+| 2 | Editorial UX — list table, ordering, scheduling | ✅ done |
+| 3 | Display — Query Loop variation | ✅ done |
+| 4 | Interactivity API — search, filtering, pagination | deferred |
+| 5 | Polish — post-type agnostic, capability, a11y, i18n | not started |
+
+**Phases 0–3 were the recommended cut line, and both goals are met there.** Phase 4 is
+where scope risk concentrates: search on VIP means Elasticsearch, which is a research
+task rather than an afternoon.
 
 **Two goals, deliberately paired:**
 
