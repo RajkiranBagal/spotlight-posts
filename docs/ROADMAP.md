@@ -90,8 +90,17 @@ Two caveats to design for rather than discover:
   cache invalidation, ordering.
 - GitHub Actions running PHPCS, PHPUnit and the JS build across PHP 8.1 / 8.2 / 8.3.
 
-**Done when** lint reports zero suppressions, CI is green, and the tests genuinely fail
-when a guard is removed.
+**Done when** lint reports zero findings, CI is green, and the tests genuinely fail when a
+guard is removed.
+
+The last of those is the one that matters. A suite that passes proves nothing on its own —
+it has to be shown to fail. Removing the capability check, the meta-key filter on index
+sync, or the count clamp each turns the suite red, so the coverage is load-bearing rather
+than decorative.
+
+CI additionally asserts that **every `phpcs:ignore` still suppresses something**. A
+suppression that has stopped matching outlives the finding it silenced and quietly
+misleads the next reader; the build fails if the count drifts.
 
 ---
 

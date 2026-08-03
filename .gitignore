@@ -15,3 +15,6 @@ Thumbs.db
 .phpcs.cache
 .phpunit.result.cache
 npm-debug.log*
+
+# Local PHPUnit override; phpunit.xml.dist is the committed default.
+phpunit.xml

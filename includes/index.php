@@ -146,7 +146,7 @@ function rebuild(): array {
 			'post_status'            => array( 'publish', 'future', 'draft', 'pending', 'private' ),
 			'posts_per_page'         => MAX_IDS,
 			'fields'                 => 'ids',
-			'meta_key'               => VIP_Featured_Posts\META_KEY, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Maintenance path only; never runs on a front-end request. See docblock.
+			'meta_key'               => VIP_Featured_Posts\META_KEY,
 			'meta_value'             => '1', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Maintenance path only; never runs on a front-end request. See docblock.
 			'no_found_rows'          => true,
 			'update_post_meta_cache' => false,

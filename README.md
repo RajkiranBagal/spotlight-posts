@@ -48,8 +48,32 @@ not been built yet degrades to "block absent" rather than a fatal error.
 | --- | --- |
 | `composer lint` | PHPCS against `WordPress-VIP-Go` |
 | `composer lint:fix` | PHPCBF auto-fix pass |
+| `composer test` | PHPUnit integration suite |
 | `npm run build` | One-off production build |
 | `npm run start` | Watch mode for development |
+
+### Running the tests
+
+The suite runs against a real WordPress install, not mocks — the things worth testing here
+are cache behaviour, `WP_Query` results and REST dispatch, none of which survive being
+mocked.
+
+```bash
+bin/install-wp-tests.sh wordpress_test <db-user> <db-pass> <db-host> 6.7
+composer test
+```
+
+If you are using the VIP dev environment, its MySQL is already exposed on the host — take
+the port from `docker ps` and pass `--skip-db-creation` style arguments as needed:
+
+```bash
+bin/install-wp-tests.sh wordpress_test wordpress wordpress 127.0.0.1:50400 6.7 true
+WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test
+```
+
+44 tests cover the save guards, the count clamp, REST validation, cache invalidation,
+index ordering and the draft round-trip. They have been mutation-checked: removing the
+capability check, the meta-key filter or the count clamp each turns the suite red.
 
 ---
 
