@@ -49,6 +49,44 @@ not been built yet degrades to "block absent" rather than a fatal error.
 
 ---
 
+## Running it in a VIP local environment
+
+Verified against VIP-CLI 4.1.0 with the plugin loaded through a local checkout of
+[`Automattic/vip-go-skeleton`](https://github.com/Automattic/vip-go-skeleton), so
+the layout matches a real VIP application.
+
+```bash
+git clone --depth 1 https://github.com/Automattic/vip-go-skeleton.git ~/vip-skeleton
+rsync -a --exclude .git --exclude node_modules --exclude vendor \
+  ./ ~/vip-skeleton/plugins/vip-featured-posts/
+
+vip dev-env create --slug vip-featured --title "VIP Featured" \
+  --multisite false --php 8.2 --wordpress 6.7 \
+  --app-code ~/vip-skeleton --mu-plugins demo \
+  --elasticsearch n --phpmyadmin n --xdebug n --cron n --mailpit n --photon n
+
+vip dev-env start --slug vip-featured
+vip dev-env exec --slug vip-featured -- wp plugin activate vip-featured-posts
+vip dev-env exec --slug vip-featured -- wp theme activate twentytwentyfive
+```
+
+Two things worth knowing:
+
+- **Use `--app-code <path>`, not `--app-code demo`.** The `demo` value mounts a
+  *read-only* image of the skeleton, so there is nowhere to put your plugin. A
+  local clone is writable and otherwise identical.
+- **Pin WordPress to 6.7 or later for the skeleton.** The skeleton bundles the
+  `twentytwentyfive` theme, which requires WP 6.7. On WP 6.4 it cannot activate,
+  no theme renders, and every front-end request returns HTTP 200 with an empty
+  body — which looks like a plugin fault but is not one. The plugin itself
+  supports 6.4+; only the skeleton's theme forces the higher floor.
+
+Because the plugin is copied rather than symlinked (Docker bind mounts do not
+follow symlinks out of the mount), re-run the `rsync` after editing, and remember
+that `build/` must exist in the copy for the block to register.
+
+---
+
 ## VIP-relevant design decisions
 
 These are the parts worth reviewing.
