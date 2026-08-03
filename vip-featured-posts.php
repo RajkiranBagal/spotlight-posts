@@ -38,11 +38,20 @@ const VERSION = '1.0.0';
  */
 define( 'VIP_FEATURED_POSTS_DIR', plugin_dir_path( __FILE__ ) );
 
+/**
+ * Absolute path to this file, for building asset URLs.
+ */
+define( 'VIP_FEATURED_POSTS_FILE', __FILE__ );
+
 require_once VIP_FEATURED_POSTS_DIR . 'includes/index.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/query.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/meta-box.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/block.php';
 require_once VIP_FEATURED_POSTS_DIR . 'includes/rest.php';
+
+if ( is_admin() ) {
+	require_once VIP_FEATURED_POSTS_DIR . 'includes/admin/list-table.php';
+}
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once VIP_FEATURED_POSTS_DIR . 'includes/cli.php';
@@ -62,6 +71,25 @@ function bootstrap(): void {
 	add_action( 'save_post_post', __NAMESPACE__ . '\\Meta_Box\\save' );
 
 	add_action( 'rest_api_init', __NAMESPACE__ . '\\REST\\register_routes' );
+
+	if ( is_admin() ) {
+		$list_table = __NAMESPACE__ . '\\Admin\\List_Table\\';
+
+		add_filter( 'manage_post_posts_columns', $list_table . 'add_column' );
+		add_action( 'manage_post_posts_custom_column', $list_table . 'render_column', 10, 2 );
+
+		add_filter( 'bulk_actions-edit-post', $list_table . 'register_bulk_actions' );
+		add_filter( 'handle_bulk_actions-edit-post', $list_table . 'handle_bulk_action', 10, 3 );
+		add_action( 'admin_notices', $list_table . 'bulk_action_notice' );
+
+		add_action( 'quick_edit_custom_box', $list_table . 'quick_edit_field', 10, 2 );
+
+		add_action( 'restrict_manage_posts', $list_table . 'filter_dropdown' );
+		add_action( 'pre_get_posts', $list_table . 'apply_filter' );
+
+		add_action( 'admin_enqueue_scripts', $list_table . 'enqueue_assets' );
+		add_action( 'wp_ajax_' . Admin\List_Table\AJAX_ACTION, $list_table . 'ajax_toggle' );
+	}
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		CLI\register();
