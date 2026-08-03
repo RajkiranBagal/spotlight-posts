@@ -393,7 +393,7 @@ humans do not review. This repo is the source side of that split.
 ```
 spotlight-posts/
 ├── spotlight-posts.php   Plugin header, constants, supported post types, hooks
-├── uninstall.php         Removes the plugin's data on delete   Plugin header, constants, hook registration
+├── uninstall.php         Removes the plugin's data on delete
 ├── includes/
 │   ├── schedule.php         Expiry meta, cron scheduling, read-time filter
 │   ├── index.php            Ordered ID index — the reason reads hit the primary key
