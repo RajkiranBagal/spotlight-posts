@@ -71,10 +71,19 @@ install_wp() {
 	mkdir -p "$WP_CORE_DIR"
 
 	if [[ $WP_VERSION == 'nightly' || $WP_VERSION == 'trunk' ]]; then
-		ARCHIVE_NAME='wordpress-nightly'
 		download https://wordpress.org/nightly-builds/wordpress-latest.zip /tmp/wordpress-nightly.zip
-		unzip -q /tmp/wordpress-nightly.zip -d /tmp/
-		mv /tmp/wordpress/* "$WP_CORE_DIR"
+
+		# Extracted somewhere distinct on purpose: the archive unpacks to a directory
+		# called "wordpress", which collides with the default WP_CORE_DIR of
+		# /tmp/wordpress and would otherwise mean moving a directory into itself.
+		local extract_dir='/tmp/wp-nightly-extract'
+		rm -rf "$extract_dir"
+		mkdir -p "$extract_dir"
+
+		unzip -q /tmp/wordpress-nightly.zip -d "$extract_dir"
+		mv "$extract_dir"/wordpress/* "$WP_CORE_DIR"
+		rm -rf "$extract_dir"
+
 		return
 	fi
 
