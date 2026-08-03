@@ -51,6 +51,7 @@ require_once VIP_FEATURED_POSTS_DIR . 'includes/rest.php';
 
 if ( is_admin() ) {
 	require_once VIP_FEATURED_POSTS_DIR . 'includes/admin/list-table.php';
+	require_once VIP_FEATURED_POSTS_DIR . 'includes/admin/order-screen.php';
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -89,6 +90,13 @@ function bootstrap(): void {
 
 		add_action( 'admin_enqueue_scripts', $list_table . 'enqueue_assets' );
 		add_action( 'wp_ajax_' . Admin\List_Table\AJAX_ACTION, $list_table . 'ajax_toggle' );
+
+		$order_screen = __NAMESPACE__ . '\\Admin\\Order_Screen\\';
+
+		add_action( 'admin_menu', $order_screen . 'register_menu' );
+		add_action( 'admin_enqueue_scripts', $order_screen . 'enqueue_assets' );
+		add_action( 'wp_ajax_' . Admin\Order_Screen\AJAX_ACTION, $order_screen . 'ajax_save_order' );
+		add_action( 'wp_ajax_' . Admin\Order_Screen\AJAX_REMOVE_ACTION, $order_screen . 'ajax_remove' );
 	}
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {

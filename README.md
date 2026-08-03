@@ -34,6 +34,12 @@ Editors can flag a post four ways, because different jobs want different ones:
 A **Featured / Not featured** filter sits above the list table, and the column appears in
 Screen Options so anyone who does not curate can hide it.
 
+**Posts → Featured Order** arranges the list by dragging, or with keyboard move controls
+for anyone not using a mouse. That order is what the block and the REST endpoint return.
+Curation is gated on `edit_others_posts` rather than post authorship, filterable via
+`vip_featured_posts_manage_capability` — deciding what the homepage promotes and being
+able to write posts are different jobs.
+
 Flagged posts appear in:
 
 - the **Featured Posts** block (dynamic, server-rendered, configurable heading and count), and
@@ -84,8 +90,8 @@ bin/install-wp-tests.sh wordpress_test wordpress wordpress 127.0.0.1:50400 6.7 t
 WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test
 ```
 
-61 tests cover the save guards, the count clamp, REST validation, cache invalidation,
-index ordering, the draft round-trip, and the list-table controls. They have been
+73 tests cover the save guards, the count clamp, REST validation, cache invalidation,
+index ordering, the draft round-trip, the list-table controls and the ordering screen. They have been
 mutation-checked: removing the capability check, the meta-key filter or the count clamp
 each turns the suite red.
 
@@ -294,6 +300,7 @@ vip-featured-posts/
 │   ├── block.php            Dynamic block registration + server render
 │   ├── rest.php             GET /wp-json/vip-featured/v1/posts
 │   ├── admin/list-table.php Column, bulk actions, Quick Edit, filter, AJAX toggle
+│   ├── admin/order-screen.php  Drag-to-reorder screen
 │   └── cli.php              wp vip-featured rebuild | list
 ├── src/featured-list/       Block editor source (compiled to build/)
 ├── .phpcs.xml               WordPress-VIP-Go ruleset, PHP 8.1+
