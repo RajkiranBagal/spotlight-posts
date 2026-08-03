@@ -58,9 +58,23 @@ function bootstrap(): void {
 
 	add_action( 'rest_api_init', __NAMESPACE__ . '\\REST\\register_routes' );
 
-	// Any post write invalidates every cached featured list.
+	/*
+	 * Cache invalidation, from two directions.
+	 *
+	 * The post hooks catch changes that alter which posts are eligible or how they
+	 * render -- a status transition, a retitled post, a deletion -- without the
+	 * featured flag itself moving.
+	 *
+	 * The meta hooks catch the flag being written outside any editing flow, which
+	 * save_post never sees: WP-CLI, the REST meta endpoints, an admin-ajax toggle, or
+	 * another plugin calling update_post_meta() directly.
+	 */
 	add_action( 'save_post_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
 	add_action( 'deleted_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
+
+	add_action( 'added_post_meta', __NAMESPACE__ . '\\Query\\bump_cache_version_on_meta', 10, 3 );
+	add_action( 'updated_post_meta', __NAMESPACE__ . '\\Query\\bump_cache_version_on_meta', 10, 3 );
+	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Query\\bump_cache_version_on_meta', 10, 3 );
 }
 
 bootstrap();
