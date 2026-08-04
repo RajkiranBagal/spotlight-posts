@@ -52,16 +52,25 @@ final class FeaturedPost implements \JsonSerializable {
 	public readonly string $excerpt;
 
 	/**
+	 * Editorial label, empty when the post has none.
+	 *
+	 * @var string
+	 */
+	public readonly string $label;
+
+	/**
 	 * @param int    $id      Post ID.
 	 * @param string $title   Rendered title.
 	 * @param string $url     Permalink.
 	 * @param string $excerpt Plain-text excerpt.
+	 * @param string $label   Editorial label.
 	 */
-	public function __construct( int $id, string $title, string $url, string $excerpt ) {
+	public function __construct( int $id, string $title, string $url, string $excerpt, string $label = '' ) {
 		$this->id      = $id;
 		$this->title   = $title;
 		$this->url     = $url;
 		$this->excerpt = $excerpt;
+		$this->label   = $label;
 	}
 
 	/**
@@ -75,7 +84,8 @@ final class FeaturedPost implements \JsonSerializable {
 			(int) $post->ID,
 			get_the_title( $post ),
 			(string) get_permalink( $post ),
-			wp_strip_all_tags( get_the_excerpt( $post ) )
+			wp_strip_all_tags( get_the_excerpt( $post ) ),
+			(string) get_post_meta( $post->ID, Meta::LABEL_KEY, true )
 		);
 	}
 
@@ -94,14 +104,15 @@ final class FeaturedPost implements \JsonSerializable {
 			(int) ( $data['id'] ?? 0 ),
 			(string) ( $data['title'] ?? '' ),
 			(string) ( $data['url'] ?? '' ),
-			(string) ( $data['excerpt'] ?? '' )
+			(string) ( $data['excerpt'] ?? '' ),
+			(string) ( $data['label'] ?? '' )
 		);
 	}
 
 	/**
 	 * Plain representation, for caching and for the REST response.
 	 *
-	 * @return array{id:int, title:string, url:string, excerpt:string} Post data.
+	 * @return array{id:int, title:string, url:string, excerpt:string, label:string} Post data.
 	 */
 	public function to_array(): array {
 		return array(
@@ -109,13 +120,14 @@ final class FeaturedPost implements \JsonSerializable {
 			'title'   => $this->title,
 			'url'     => $this->url,
 			'excerpt' => $this->excerpt,
+			'label'   => $this->label,
 		);
 	}
 
 	/**
 	 * Serialize for JSON, so the REST route can return these directly.
 	 *
-	 * @return array{id:int, title:string, url:string, excerpt:string} Post data.
+	 * @return array{id:int, title:string, url:string, excerpt:string, label:string} Post data.
 	 */
 	public function jsonSerialize(): array { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid -- Defined by JsonSerializable.
 		return $this->to_array();

@@ -13,7 +13,7 @@ under both a VIP code review and a real editorial team.
 | 3 | Display — Query Loop variation | ✅ done |
 | 4 | Interactivity API — search, filtering, pagination | ❌ declined |
 | 5 | Polish — post-type agnostic, uninstall, a11y, i18n/RTL | ✅ done |
-| 6 | Fallback fill and labels | planned |
+| 6 | Fallback fill and labels | ✅ done |
 | — | Named slots | ❌ declined |
 
 **Phases 0–3 and 5 are complete.** Phase 4 and named slots were each planned, then

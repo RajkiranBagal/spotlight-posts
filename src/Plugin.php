@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts;
 
 use Spotlight_Posts\Featured\Index;
+use Spotlight_Posts\Featured\Meta;
 use Spotlight_Posts\Featured\Repository;
 use Spotlight_Posts\Featured\Schedule;
 use Spotlight_Posts\Admin\ListTable\AjaxToggle;
@@ -62,6 +63,7 @@ final class Plugin {
 		$request    = new Request();
 
 		$index    = new Index( $cache, $post_types );
+		$meta     = new Meta( $post_types, $cache );
 		$schedule = new Schedule( $cache, $post_types );
 
 		// Repository depends on all three; none of them depend back on it.
@@ -72,6 +74,7 @@ final class Plugin {
 			PostTypes::class          => $post_types,
 			Cache::class              => $cache,
 			Index::class              => $index,
+			Meta::class               => $meta,
 			Schedule::class           => $schedule,
 			Repository::class         => $repository,
 			Block::class              => new Block( $repository, SPOTLIGHT_POSTS_DIR ),

@@ -135,6 +135,11 @@ final class Block implements Registrable {
 							<?php continue; ?>
 						<?php endif; ?>
 						<li class="wp-block-spotlight-posts-featured-list__item">
+							<?php if ( '' !== $post->label ) : ?>
+								<span class="wp-block-spotlight-posts-featured-list__label">
+									<?php echo esc_html( $post->label ); ?>
+								</span>
+							<?php endif; ?>
 							<a href="<?php echo esc_url( $post->url ); ?>">
 								<?php echo esc_html( $post->title ); ?>
 							</a>

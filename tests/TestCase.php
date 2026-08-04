@@ -149,4 +149,12 @@ abstract class TestCase extends \WP_UnitTestCase {
 		return \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Support\PostTypes::class )->all();
 	}
 
+
+	/**
+	 * The meta registration service.
+	 */
+	protected function meta(): \Spotlight_Posts\Featured\Meta {
+		return \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Featured\Meta::class );
+	}
+
 }
