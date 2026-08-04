@@ -134,4 +134,9 @@ jobs:
           test -f build/featured-list/block.json
           test -f build/featured-list/index.js
           test -f build/featured-list/index.asset.php
+          # The variation's entry is named after its source file, so a rename in
+          # package.json that the PHP does not follow shows up here rather than as a
+          # silently missing variation in the editor.
+          test -f build/query-loop/query-loop.js
+          test -f build/query-loop/query-loop.asset.php
           echo "Block assets present."

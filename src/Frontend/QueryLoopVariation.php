@@ -139,7 +139,7 @@ final class QueryLoopVariation implements Registrable {
 	 * core/query variations have no PHP equivalent, so the variation itself is JavaScript.
 	 */
 	public function enqueue_editor_assets(): void {
-		$asset_file = $this->plugin_dir . self::BUILD_PATH . '/index.asset.php';
+		$asset_file = $this->plugin_dir . self::BUILD_PATH . '/query-loop.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
 			return;
@@ -149,7 +149,7 @@ final class QueryLoopVariation implements Registrable {
 
 		wp_enqueue_script(
 			'spotlight-posts-query-loop',
-			plugins_url( self::BUILD_PATH . '/index.js', $this->plugin_file ),
+			plugins_url( self::BUILD_PATH . '/query-loop.js', $this->plugin_file ),
 			$asset['dependencies'],
 			$asset['version'],
 			true
