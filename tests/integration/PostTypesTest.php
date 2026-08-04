@@ -63,7 +63,7 @@ class PostTypesTest extends TestCase {
 	 * Out of the box only posts are supported, so an existing site sees no change.
 	 */
 	public function test_defaults_to_posts_only(): void {
-		$this->assertSame( array( 'post' ), \Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post' ), $this->postTypes() );
 	}
 
 	/**
@@ -72,7 +72,7 @@ class PostTypesTest extends TestCase {
 	public function test_filter_adds_a_type(): void {
 		$this->support_guides();
 
-		$this->assertSame( array( 'post', 'guide' ), \Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post', 'guide' ), $this->postTypes() );
 	}
 
 	/**
@@ -86,7 +86,7 @@ class PostTypesTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( array( 'post' ), \Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post' ), $this->postTypes() );
 	}
 
 	/**
@@ -100,7 +100,7 @@ class PostTypesTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( array( 'post', 'guide' ), \Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post', 'guide' ), $this->postTypes() );
 	}
 
 	/**
@@ -117,7 +117,7 @@ class PostTypesTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( array( 'post' ), \Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post' ), $this->postTypes() );
 	}
 
 	/**
@@ -131,7 +131,7 @@ class PostTypesTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( array( 'post', 'guide' ), \Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post', 'guide' ), $this->postTypes() );
 	}
 
 	/**
@@ -150,8 +150,8 @@ class PostTypesTest extends TestCase {
 
 		update_post_meta( $guide, Index::META_KEY, '1' );
 
-		$this->assertContains( $guide, \Spotlight_Posts\index()->ids() );
-		$this->assertContains( $guide, wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ) );
+		$this->assertContains( $guide, $this->index()->ids() );
+		$this->assertContains( $guide, wp_list_pluck( $this->repository()->find( 5 ), 'id' ) );
 	}
 
 	/**
@@ -169,11 +169,11 @@ class PostTypesTest extends TestCase {
 		);
 		update_post_meta( $guide, Index::META_KEY, '1' );
 
-		\Spotlight_Posts\index()->set( array( $guide, $post ) );
+		$this->index()->set( array( $guide, $post ) );
 
 		$this->assertSame(
 			array( $guide, $post ),
-			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ),
+			wp_list_pluck( $this->repository()->find( 5 ), 'id' ),
 			'Ordering spans post types rather than grouping by them.'
 		);
 	}
@@ -192,10 +192,10 @@ class PostTypesTest extends TestCase {
 
 		update_post_meta( $guide, Index::META_KEY, '1' );
 
-		\Spotlight_Posts\index()->rebuild();
+		$this->index()->rebuild();
 
-		$this->assertNotContains( $guide, \Spotlight_Posts\index()->ids() );
-		$this->assertNotContains( $guide, wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ) );
+		$this->assertNotContains( $guide, $this->index()->ids() );
+		$this->assertNotContains( $guide, wp_list_pluck( $this->repository()->find( 5 ), 'id' ) );
 	}
 
 	/**

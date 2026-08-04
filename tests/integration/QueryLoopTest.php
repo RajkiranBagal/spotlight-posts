@@ -60,9 +60,9 @@ class QueryLoopTest extends TestCase {
 		$a = $this->create_featured_post( 'A' );
 		$b = $this->create_featured_post( 'B' );
 
-		\Spotlight_Posts\index()->set( array( $b, $a ) );
+		$this->index()->set( array( $b, $a ) );
 
-		$this->assertSame( array( $b, $a ), \Spotlight_Posts\repository()->eligible_ids() );
+		$this->assertSame( array( $b, $a ), $this->repository()->eligible_ids() );
 	}
 
 	/**
@@ -75,7 +75,7 @@ class QueryLoopTest extends TestCase {
 
 		update_post_meta( $expired, Schedule::META_KEY, time() - 60 );
 
-		$ids = \Spotlight_Posts\repository()->eligible_ids();
+		$ids = $this->repository()->eligible_ids();
 
 		$this->assertContains( $live, $ids );
 		$this->assertNotContains( $expired, $ids );
@@ -88,7 +88,7 @@ class QueryLoopTest extends TestCase {
 	 * to every post on the site.
 	 */
 	public function test_empty_index_yields_a_sentinel(): void {
-		$this->assertSame( array( 0 ), \Spotlight_Posts\repository()->eligible_ids() );
+		$this->assertSame( array( 0 ), $this->repository()->eligible_ids() );
 	}
 
 	/**
@@ -114,7 +114,7 @@ class QueryLoopTest extends TestCase {
 		$a = $this->create_featured_post( 'A' );
 		$b = $this->create_featured_post( 'B' );
 
-		\Spotlight_Posts\index()->set( array( $b, $a ) );
+		$this->index()->set( array( $b, $a ) );
 
 		$vars = $this->variation()->filter_query_vars(
 			array( 'post_type' => 'post', 'order' => 'DESC' ),

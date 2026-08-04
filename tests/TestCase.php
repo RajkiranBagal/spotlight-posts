@@ -118,4 +118,35 @@ abstract class TestCase extends \WP_UnitTestCase {
 		return $this->svc( \Spotlight_Posts\Admin\OrderScreen::class );
 	}
 
+
+	/**
+	 * The featured posts repository.
+	 */
+	protected function repository(): \Spotlight_Posts\Featured\Repository {
+		return \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Featured\Repository::class );
+	}
+
+	/**
+	 * The ordered ID index.
+	 */
+	protected function index(): \Spotlight_Posts\Featured\Index {
+		return \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Featured\Index::class );
+	}
+
+	/**
+	 * The expiry scheduler.
+	 */
+	protected function schedule(): \Spotlight_Posts\Featured\Schedule {
+		return \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Featured\Schedule::class );
+	}
+
+	/**
+	 * Supported post types.
+	 *
+	 * @return string[] Post type slugs.
+	 */
+	protected function postTypes(): array {
+		return \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Support\PostTypes::class )->all();
+	}
+
 }

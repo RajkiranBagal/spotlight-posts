@@ -230,7 +230,7 @@ class ListTableTest extends TestCase {
 
 		$this->filter()->apply( $query );
 
-		$this->assertSame( \Spotlight_Posts\index()->ids(), $query->get( 'post__in' ) );
+		$this->assertSame( $this->index()->ids(), $query->get( 'post__in' ) );
 	}
 
 	/**
@@ -245,7 +245,7 @@ class ListTableTest extends TestCase {
 
 		$this->filter()->apply( $query );
 
-		$this->assertSame( \Spotlight_Posts\index()->ids(), $query->get( 'post__not_in' ) );
+		$this->assertSame( $this->index()->ids(), $query->get( 'post__not_in' ) );
 	}
 
 	/**

@@ -25,8 +25,8 @@ class QueryTest extends TestCase {
 		$this->create_featured_post( 'One' );
 		$this->create_featured_post( 'Two' );
 
-		$this->assertCount( Repository::MIN_POSTS, \Spotlight_Posts\repository()->find( 0 ) );
-		$this->assertCount( Repository::MIN_POSTS, \Spotlight_Posts\repository()->find( -10 ) );
+		$this->assertCount( Repository::MIN_POSTS, $this->repository()->find( 0 ) );
+		$this->assertCount( Repository::MIN_POSTS, $this->repository()->find( -10 ) );
 	}
 
 	/**
@@ -37,7 +37,7 @@ class QueryTest extends TestCase {
 			$this->create_featured_post( 'Post ' . $i );
 		}
 
-		$this->assertCount( Repository::MAX_POSTS, \Spotlight_Posts\repository()->find( 500 ) );
+		$this->assertCount( Repository::MAX_POSTS, $this->repository()->find( 500 ) );
 	}
 
 	/**
@@ -48,9 +48,9 @@ class QueryTest extends TestCase {
 		$b = $this->create_featured_post( 'B' );
 		$c = $this->create_featured_post( 'C' );
 
-		\Spotlight_Posts\index()->set( array( $b, $c, $a ) );
+		$this->index()->set( array( $b, $c, $a ) );
 
-		$ids = wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' );
+		$ids = wp_list_pluck( $this->repository()->find( 5 ), 'id' );
 
 		$this->assertSame( array( $b, $c, $a ), $ids );
 	}
@@ -64,11 +64,11 @@ class QueryTest extends TestCase {
 		$draft = self::factory()->post->create( array( 'post_status' => 'draft' ) );
 		update_post_meta( $draft, Index::META_KEY, '1' );
 
-		$ids = wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' );
+		$ids = wp_list_pluck( $this->repository()->find( 5 ), 'id' );
 
 		$this->assertContains( $published, $ids );
 		$this->assertNotContains( $draft, $ids );
-		$this->assertContains( $draft, \Spotlight_Posts\index()->ids(), 'The draft should keep its index position.' );
+		$this->assertContains( $draft, $this->index()->ids(), 'The draft should keep its index position.' );
 	}
 
 	/**
@@ -78,7 +78,7 @@ class QueryTest extends TestCase {
 		$a = $this->create_featured_post( 'A' );
 		$b = $this->create_featured_post( 'B' );
 
-		\Spotlight_Posts\index()->set( array( $a, $b ) );
+		$this->index()->set( array( $a, $b ) );
 
 		wp_update_post(
 			array(
@@ -87,7 +87,7 @@ class QueryTest extends TestCase {
 			)
 		);
 
-		$this->assertSame( array( $b ), wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ) );
+		$this->assertSame( array( $b ), wp_list_pluck( $this->repository()->find( 5 ), 'id' ) );
 
 		wp_update_post(
 			array(
@@ -98,7 +98,7 @@ class QueryTest extends TestCase {
 
 		$this->assertSame(
 			array( $a, $b ),
-			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ),
+			wp_list_pluck( $this->repository()->find( 5 ), 'id' ),
 			'The republished post should return to the front, where it was indexed.'
 		);
 	}
@@ -109,10 +109,10 @@ class QueryTest extends TestCase {
 	public function test_second_call_is_served_from_cache(): void {
 		$this->create_featured_post( 'Cached' );
 
-		\Spotlight_Posts\repository()->find( 5 );
+		$this->repository()->find( 5 );
 
 		$queries_before = get_num_queries();
-		\Spotlight_Posts\repository()->find( 5 );
+		$this->repository()->find( 5 );
 
 		$this->assertSame(
 			$queries_before,
@@ -130,14 +130,14 @@ class QueryTest extends TestCase {
 	public function test_meta_write_invalidates_the_cache(): void {
 		$first = $this->create_featured_post( 'First' );
 
-		$this->assertSame( array( $first ), wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ) );
+		$this->assertSame( array( $first ), wp_list_pluck( $this->repository()->find( 5 ), 'id' ) );
 
 		$second = self::factory()->post->create( array( 'post_status' => 'publish' ) );
 		update_post_meta( $second, Index::META_KEY, '1' );
 
 		$this->assertSame(
 			array( $second, $first ),
-			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ),
+			wp_list_pluck( $this->repository()->find( 5 ), 'id' ),
 			'The newly featured post should appear immediately.'
 		);
 	}
@@ -148,11 +148,11 @@ class QueryTest extends TestCase {
 	public function test_meta_delete_invalidates_the_cache(): void {
 		$post_id = $this->create_featured_post();
 
-		$this->assertCount( 1, \Spotlight_Posts\repository()->find( 5 ) );
+		$this->assertCount( 1, $this->repository()->find( 5 ) );
 
 		delete_post_meta( $post_id, Index::META_KEY );
 
-		$this->assertSame( array(), \Spotlight_Posts\repository()->find( 5 ) );
+		$this->assertSame( array(), $this->repository()->find( 5 ) );
 	}
 
 	/**
@@ -161,7 +161,7 @@ class QueryTest extends TestCase {
 	public function test_editing_a_post_refreshes_the_cached_payload(): void {
 		$post_id = $this->create_featured_post( 'Before' );
 
-		$this->assertSame( 'Before', \Spotlight_Posts\repository()->find( 5 )[0]->title );
+		$this->assertSame( 'Before', $this->repository()->find( 5 )[0]->title );
 
 		wp_update_post(
 			array(
@@ -170,14 +170,14 @@ class QueryTest extends TestCase {
 			)
 		);
 
-		$this->assertSame( 'After', \Spotlight_Posts\repository()->find( 5 )[0]->title );
+		$this->assertSame( 'After', $this->repository()->find( 5 )[0]->title );
 	}
 
 	/**
 	 * An empty index short-circuits without querying for posts.
 	 */
 	public function test_empty_index_returns_an_empty_array(): void {
-		$this->assertSame( array(), \Spotlight_Posts\repository()->find( 5 ) );
+		$this->assertSame( array(), $this->repository()->find( 5 ) );
 	}
 
 	/**
@@ -186,7 +186,7 @@ class QueryTest extends TestCase {
 	public function test_returned_shape(): void {
 		$this->create_featured_post( 'Shape' );
 
-		$posts = \Spotlight_Posts\repository()->find( 5 );
+		$posts = $this->repository()->find( 5 );
 
 		$this->assertInstanceOf( \Spotlight_Posts\Featured\FeaturedPost::class, $posts[0] );
 		$this->assertIsInt( $posts[0]->id );
