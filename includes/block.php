@@ -69,7 +69,7 @@ function render( array $attributes ): string {
 	$heading_tag   = 'h' . max( 2, min( 6, $heading_level ) );
 	$number_of_posts = isset( $attributes['numberOfPosts'] ) ? (int) $attributes['numberOfPosts'] : 5;
 
-	$posts = Query\get_featured_posts( $number_of_posts );
+	$posts = \Spotlight_Posts\repository()->find( $number_of_posts );
 
 	ob_start();
 	?>

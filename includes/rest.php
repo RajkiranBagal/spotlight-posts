@@ -73,14 +73,14 @@ function validate_count( $value ) {
 
 	$count = (int) $value;
 
-	if ( $count < Query\MIN_POSTS || $count > Query\MAX_POSTS ) {
+	if ( $count < \Spotlight_Posts\Featured\Repository::MIN_POSTS || $count > \Spotlight_Posts\Featured\Repository::MAX_POSTS ) {
 		return new \WP_Error(
 			'spotlight_posts_invalid_count',
 			sprintf(
 				/* translators: 1: minimum allowed count, 2: maximum allowed count. */
 				__( 'The count parameter must be between %1$d and %2$d.', 'spotlight-posts' ),
-				Query\MIN_POSTS,
-				Query\MAX_POSTS
+				\Spotlight_Posts\Featured\Repository::MIN_POSTS,
+				\Spotlight_Posts\Featured\Repository::MAX_POSTS
 			),
 			array( 'status' => 400 )
 		);
@@ -98,5 +98,5 @@ function validate_count( $value ) {
 function get_items( \WP_REST_Request $request ): \WP_REST_Response {
 	$count = (int) $request->get_param( 'count' );
 
-	return rest_ensure_response( Query\get_featured_posts( $count ) );
+	return rest_ensure_response( \Spotlight_Posts\repository()->find( $count ) );
 }

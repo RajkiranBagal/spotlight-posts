@@ -78,7 +78,7 @@ function render_page(): void {
 		wp_die( esc_html__( 'You are not allowed to manage featured posts.', 'spotlight-posts' ), 403 );
 	}
 
-	$ids = Index\get_ids();
+	$ids = \Spotlight_Posts\index()->ids();
 	?>
 	<div class="wrap spotlight-order">
 		<h1><?php esc_html_e( 'Featured Posts Order', 'spotlight-posts' ); ?></h1>
@@ -250,14 +250,14 @@ function enqueue_assets( string $hook ): void {
  */
 function apply_order( array $submitted ): array {
 	$submitted = array_map( 'absint', $submitted );
-	$current   = Index\get_ids();
+	$current   = \Spotlight_Posts\index()->ids();
 
 	$ordered = array_values( array_intersect( $submitted, $current ) );
 	$missing = array_values( array_diff( $current, $ordered ) );
 
-	Index\set_ids( array_merge( $ordered, $missing ) );
+	\Spotlight_Posts\index()->set( array_merge( $ordered, $missing ) );
 
-	return Index\get_ids();
+	return \Spotlight_Posts\index()->ids();
 }
 
 /**
@@ -296,7 +296,7 @@ function ajax_remove(): void {
 		wp_send_json_error( array( 'message' => __( 'You are not allowed to edit this post.', 'spotlight-posts' ) ), 403 );
 	}
 
-	delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
+	delete_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY );
 
 	wp_send_json_success( array( 'postId' => $post_id ) );
 }

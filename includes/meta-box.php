@@ -41,10 +41,10 @@ const UNTIL_FIELD_NAME = 'spotlight_posts_until';
  * every write path and an auth_callback that gates the protected key.
  */
 function register_meta(): void {
-	foreach ( Spotlight_Posts\supported_post_types() as $post_type ) {
+	foreach ( \Spotlight_Posts\supported_post_types() as $post_type ) {
 		register_post_meta(
 			$post_type,
-			Spotlight_Posts\META_KEY,
+			\Spotlight_Posts\Featured\Index::META_KEY,
 			array(
 				'type'              => 'string',
 				'single'            => true,
@@ -89,7 +89,7 @@ function add_meta_box(): void {
 		'spotlight-posts',
 		__( 'Featured', 'spotlight-posts' ),
 		__NAMESPACE__ . '\\render',
-		Spotlight_Posts\supported_post_types(),
+		\Spotlight_Posts\supported_post_types(),
 		'side',
 		'default'
 	);
@@ -101,9 +101,9 @@ function add_meta_box(): void {
  * @param \WP_Post $post Post being edited.
  */
 function render( \WP_Post $post ): void {
-	$is_featured = '1' === get_post_meta( $post->ID, Spotlight_Posts\META_KEY, true );
+	$is_featured = '1' === get_post_meta( $post->ID, \Spotlight_Posts\Featured\Index::META_KEY, true );
 
-	$expiry = Schedule\get_expiry( $post->ID );
+	$expiry = \Spotlight_Posts\schedule()->expiry_for( $post->ID );
 
 	// datetime-local speaks local wall-clock time, so the stored UTC timestamp is
 	// converted into the site's timezone for display and back again on save.
@@ -202,18 +202,18 @@ function save( int $post_id ): void {
 	if ( '1' !== $submitted ) {
 		// Deleting the flag also clears any pending expiry, via the hook in
 		// Schedule\clear_on_unfeature(). Nothing to do here.
-		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
+		delete_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY );
 
 		return;
 	}
 
-	update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
+	update_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY, '1' );
 
 	$until = isset( $_POST[ UNTIL_FIELD_NAME ] )
 		? sanitize_text_field( wp_unslash( $_POST[ UNTIL_FIELD_NAME ] ) )
 		: '';
 
-	Schedule\set_expiry( $post_id, parse_until( $until ) );
+	\Spotlight_Posts\schedule()->set_expiry( $post_id, parse_until( $until ) );
 }
 
 /**

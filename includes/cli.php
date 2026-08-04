@@ -44,7 +44,7 @@ class Command {
 	public function rebuild( $args, $assoc_args ): void {
 		$dry_run = isset( $assoc_args['dry-run'] );
 
-		$before = Index\get_ids();
+		$before = \Spotlight_Posts\index()->ids();
 
 		if ( $dry_run ) {
 			\WP_CLI::log( sprintf( 'Current index holds %d post(s).', count( $before ) ) );
@@ -53,16 +53,16 @@ class Command {
 			return;
 		}
 
-		$after = Index\rebuild();
+		$after = \Spotlight_Posts\index()->rebuild();
 
 		\WP_CLI::log( sprintf( 'Before: %d post(s).', count( $before ) ) );
 		\WP_CLI::log( sprintf( 'After:  %d post(s).', count( $after ) ) );
 
-		if ( count( $after ) === Index\MAX_IDS ) {
+		if ( count( $after ) === \Spotlight_Posts\Featured\Index::MAX_IDS ) {
 			\WP_CLI::warning(
 				sprintf(
 					'The index hit its ceiling of %d. Posts beyond that are not indexed.',
-					Index\MAX_IDS
+					\Spotlight_Posts\Featured\Index::MAX_IDS
 				)
 			);
 		}
@@ -81,7 +81,7 @@ class Command {
 	 * @param array $assoc_args Associative arguments. Unused.
 	 */
 	public function list( $args, $assoc_args ): void {
-		$ids = Index\get_ids();
+		$ids = \Spotlight_Posts\index()->ids();
 
 		if ( empty( $ids ) ) {
 			\WP_CLI::log( 'The featured index is empty.' );

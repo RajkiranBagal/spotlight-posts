@@ -11,8 +11,8 @@ namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
 use Spotlight_Posts\Admin\List_Table;
-use Spotlight_Posts\Index;
-use Spotlight_Posts\Query;
+use Spotlight_Posts\Featured\Index;
+use Spotlight_Posts\Featured\Repository;
 
 /**
  * @covers \Spotlight_Posts\supported_post_types
@@ -61,7 +61,7 @@ class PostTypesTest extends TestCase {
 	 * Out of the box only posts are supported, so an existing site sees no change.
 	 */
 	public function test_defaults_to_posts_only(): void {
-		$this->assertSame( array( 'post' ), Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post' ), \Spotlight_Posts\supported_post_types() );
 	}
 
 	/**
@@ -70,7 +70,7 @@ class PostTypesTest extends TestCase {
 	public function test_filter_adds_a_type(): void {
 		$this->support_guides();
 
-		$this->assertSame( array( 'post', 'guide' ), Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post', 'guide' ), \Spotlight_Posts\supported_post_types() );
 	}
 
 	/**
@@ -84,7 +84,7 @@ class PostTypesTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( array( 'post' ), Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post' ), \Spotlight_Posts\supported_post_types() );
 	}
 
 	/**
@@ -98,7 +98,7 @@ class PostTypesTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( array( 'post', 'guide' ), Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post', 'guide' ), \Spotlight_Posts\supported_post_types() );
 	}
 
 	/**
@@ -115,7 +115,7 @@ class PostTypesTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( array( 'post' ), Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post' ), \Spotlight_Posts\supported_post_types() );
 	}
 
 	/**
@@ -129,7 +129,7 @@ class PostTypesTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( array( 'post', 'guide' ), Spotlight_Posts\supported_post_types() );
+		$this->assertSame( array( 'post', 'guide' ), \Spotlight_Posts\supported_post_types() );
 	}
 
 	/**
@@ -146,10 +146,10 @@ class PostTypesTest extends TestCase {
 			)
 		);
 
-		update_post_meta( $guide, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $guide, Index::META_KEY, '1' );
 
-		$this->assertContains( $guide, Index\get_ids() );
-		$this->assertContains( $guide, wp_list_pluck( Query\get_featured_posts( 5 ), 'id' ) );
+		$this->assertContains( $guide, \Spotlight_Posts\index()->ids() );
+		$this->assertContains( $guide, wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ) );
 	}
 
 	/**
@@ -165,13 +165,13 @@ class PostTypesTest extends TestCase {
 				'post_status' => 'publish',
 			)
 		);
-		update_post_meta( $guide, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $guide, Index::META_KEY, '1' );
 
-		Index\set_ids( array( $guide, $post ) );
+		\Spotlight_Posts\index()->set( array( $guide, $post ) );
 
 		$this->assertSame(
 			array( $guide, $post ),
-			wp_list_pluck( Query\get_featured_posts( 5 ), 'id' ),
+			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ),
 			'Ordering spans post types rather than grouping by them.'
 		);
 	}
@@ -188,12 +188,12 @@ class PostTypesTest extends TestCase {
 			)
 		);
 
-		update_post_meta( $guide, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $guide, Index::META_KEY, '1' );
 
-		Index\rebuild();
+		\Spotlight_Posts\index()->rebuild();
 
-		$this->assertNotContains( $guide, Index\get_ids() );
-		$this->assertNotContains( $guide, wp_list_pluck( Query\get_featured_posts( 5 ), 'id' ) );
+		$this->assertNotContains( $guide, \Spotlight_Posts\index()->ids() );
+		$this->assertNotContains( $guide, wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ) );
 	}
 
 	/**
@@ -227,6 +227,6 @@ class PostTypesTest extends TestCase {
 
 		$registered = get_registered_meta_keys( 'post', 'guide' );
 
-		$this->assertArrayHasKey( Spotlight_Posts\META_KEY, $registered );
+		$this->assertArrayHasKey( Index::META_KEY, $registered );
 	}
 }

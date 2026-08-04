@@ -10,9 +10,9 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
-use Spotlight_Posts\Index;
-use Spotlight_Posts\Query;
-use Spotlight_Posts\Schedule;
+use Spotlight_Posts\Featured\Index;
+use Spotlight_Posts\Featured\Repository;
+use Spotlight_Posts\Featured\Schedule;
 
 /**
  * @covers \Spotlight_Posts\Schedule
@@ -34,8 +34,8 @@ class ScheduleTest extends TestCase {
 	public function test_a_post_without_an_expiry_never_expires(): void {
 		$post_id = $this->create_featured_post();
 
-		$this->assertSame( 0, Schedule\get_expiry( $post_id ) );
-		$this->assertFalse( Schedule\is_expired( $post_id ) );
+		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $post_id ) );
+		$this->assertFalse( \Spotlight_Posts\schedule()->is_expired( $post_id ) );
 	}
 
 	/**
@@ -45,11 +45,11 @@ class ScheduleTest extends TestCase {
 		$post_id = $this->create_featured_post();
 		$when    = time() + HOUR_IN_SECONDS;
 
-		Schedule\set_expiry( $post_id, $when );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, $when );
 
-		$this->assertSame( $when, Schedule\get_expiry( $post_id ) );
-		$this->assertFalse( Schedule\is_expired( $post_id ) );
-		$this->assertSame( $when, wp_next_scheduled( Schedule\CRON_HOOK, array( $post_id ) ) );
+		$this->assertSame( $when, \Spotlight_Posts\schedule()->expiry_for( $post_id ) );
+		$this->assertFalse( \Spotlight_Posts\schedule()->is_expired( $post_id ) );
+		$this->assertSame( $when, wp_next_scheduled( Schedule::CRON_HOOK, array( $post_id ) ) );
 	}
 
 	/**
@@ -58,11 +58,11 @@ class ScheduleTest extends TestCase {
 	public function test_clearing_the_expiry_unschedules_it(): void {
 		$post_id = $this->create_featured_post();
 
-		Schedule\set_expiry( $post_id, time() + HOUR_IN_SECONDS );
-		Schedule\set_expiry( $post_id, 0 );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, time() + HOUR_IN_SECONDS );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, 0 );
 
-		$this->assertSame( 0, Schedule\get_expiry( $post_id ) );
-		$this->assertFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $post_id ) ) );
+		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $post_id ) );
+		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $post_id ) ) );
 	}
 
 	/**
@@ -75,10 +75,10 @@ class ScheduleTest extends TestCase {
 		$first  = time() + HOUR_IN_SECONDS;
 		$second = time() + ( 2 * HOUR_IN_SECONDS );
 
-		Schedule\set_expiry( $post_id, $first );
-		Schedule\set_expiry( $post_id, $second );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, $first );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, $second );
 
-		$this->assertSame( $second, wp_next_scheduled( Schedule\CRON_HOOK, array( $post_id ) ) );
+		$this->assertSame( $second, wp_next_scheduled( Schedule::CRON_HOOK, array( $post_id ) ) );
 	}
 
 	/**
@@ -88,11 +88,11 @@ class ScheduleTest extends TestCase {
 	public function test_past_expiry_is_applied_immediately(): void {
 		$post_id = $this->create_featured_post();
 
-		Schedule\set_expiry( $post_id, time() - HOUR_IN_SECONDS );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, time() - HOUR_IN_SECONDS );
 
-		$this->assertSame( '', get_post_meta( $post_id, Spotlight_Posts\META_KEY, true ) );
-		$this->assertNotContains( $post_id, Index\get_ids() );
-		$this->assertFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $post_id ) ) );
+		$this->assertSame( '', get_post_meta( $post_id, Index::META_KEY, true ) );
+		$this->assertNotContains( $post_id, \Spotlight_Posts\index()->ids() );
+		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $post_id ) ) );
 	}
 
 	/**
@@ -101,15 +101,15 @@ class ScheduleTest extends TestCase {
 	public function test_cron_callback_unfeatures_the_post(): void {
 		$post_id = $this->create_featured_post();
 
-		Schedule\set_expiry( $post_id, time() + HOUR_IN_SECONDS );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, time() + HOUR_IN_SECONDS );
 
-		$this->assertContains( $post_id, Index\get_ids() );
+		$this->assertContains( $post_id, \Spotlight_Posts\index()->ids() );
 
-		Schedule\handle_cron( $post_id );
+		\Spotlight_Posts\schedule()->handle_cron( $post_id );
 
-		$this->assertSame( '', get_post_meta( $post_id, Spotlight_Posts\META_KEY, true ) );
-		$this->assertSame( 0, Schedule\get_expiry( $post_id ) );
-		$this->assertNotContains( $post_id, Index\get_ids() );
+		$this->assertSame( '', get_post_meta( $post_id, Index::META_KEY, true ) );
+		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $post_id ) );
+		$this->assertNotContains( $post_id, \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -120,11 +120,11 @@ class ScheduleTest extends TestCase {
 		$keeper  = $this->create_featured_post( 'Keeper' );
 		$expirer = $this->create_featured_post( 'Expirer' );
 
-		$this->assertCount( 2, Query\get_featured_posts( 5 ) );
+		$this->assertCount( 2, \Spotlight_Posts\repository()->find( 5 ) );
 
-		Schedule\handle_cron( $expirer );
+		\Spotlight_Posts\schedule()->handle_cron( $expirer );
 
-		$ids = wp_list_pluck( Query\get_featured_posts( 5 ), 'id' );
+		$ids = wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' );
 
 		$this->assertSame( array( $keeper ), $ids );
 	}
@@ -133,8 +133,8 @@ class ScheduleTest extends TestCase {
 	 * A malformed cron argument must not fatal inside cron.
 	 */
 	public function test_cron_callback_tolerates_bad_arguments(): void {
-		Schedule\handle_cron( 0 );
-		Schedule\handle_cron( 'not-an-id' );
+		\Spotlight_Posts\schedule()->handle_cron( 0 );
+		\Spotlight_Posts\schedule()->handle_cron( 'not-an-id' );
 
 		$this->assertTrue( true, 'Reached without a TypeError.' );
 	}
@@ -148,12 +148,12 @@ class ScheduleTest extends TestCase {
 	public function test_unfeaturing_clears_a_pending_expiry(): void {
 		$post_id = $this->create_featured_post();
 
-		Schedule\set_expiry( $post_id, time() + HOUR_IN_SECONDS );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, time() + HOUR_IN_SECONDS );
 
-		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
+		delete_post_meta( $post_id, Index::META_KEY );
 
-		$this->assertFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $post_id ) ) );
-		$this->assertSame( 0, Schedule\get_expiry( $post_id ) );
+		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $post_id ) ) );
+		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $post_id ) );
 	}
 
 	/**
@@ -166,9 +166,9 @@ class ScheduleTest extends TestCase {
 		$live    = $this->create_featured_post( 'Live' );
 		$expired = $this->create_featured_post( 'Expired' );
 
-		update_post_meta( $expired, Schedule\META_KEY, time() - 60 );
+		update_post_meta( $expired, Schedule::META_KEY, time() - 60 );
 
-		$ids = wp_list_pluck( Query\get_featured_posts( 5 ), 'id' );
+		$ids = wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' );
 
 		$this->assertContains( $live, $ids );
 		$this->assertNotContains( $expired, $ids, 'An expired post must not surface even before cron runs.' );
@@ -180,12 +180,12 @@ class ScheduleTest extends TestCase {
 	public function test_expired_posts_are_filtered_before_caching(): void {
 		$expired = $this->create_featured_post( 'Expired' );
 
-		update_post_meta( $expired, Schedule\META_KEY, time() - 60 );
+		update_post_meta( $expired, Schedule::META_KEY, time() - 60 );
 
 		// Populate the cache, then read it back.
-		Query\get_featured_posts( 5 );
+		\Spotlight_Posts\repository()->find( 5 );
 
-		$this->assertSame( array(), Query\get_featured_posts( 5 ) );
+		$this->assertSame( array(), \Spotlight_Posts\repository()->find( 5 ) );
 	}
 
 	/**
@@ -201,13 +201,13 @@ class ScheduleTest extends TestCase {
 		$expirer = $this->create_featured_post( 'Expirer' );
 
 		// Populate the cache while both are live.
-		$this->assertCount( 2, Query\get_featured_posts( 5 ) );
+		$this->assertCount( 2, \Spotlight_Posts\repository()->find( 5 ) );
 
-		update_post_meta( $expirer, Schedule\META_KEY, time() - 60 );
+		update_post_meta( $expirer, Schedule::META_KEY, time() - 60 );
 
 		$this->assertSame(
 			array( $keeper ),
-			wp_list_pluck( Query\get_featured_posts( 5 ), 'id' ),
+			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ),
 			'An expiry written after the list was cached must take effect immediately.'
 		);
 	}
@@ -218,15 +218,15 @@ class ScheduleTest extends TestCase {
 	public function test_clearing_an_expiry_invalidates_the_cache(): void {
 		$post_id = $this->create_featured_post();
 
-		update_post_meta( $post_id, Schedule\META_KEY, time() - 60 );
+		update_post_meta( $post_id, Schedule::META_KEY, time() - 60 );
 
-		$this->assertSame( array(), Query\get_featured_posts( 5 ) );
+		$this->assertSame( array(), \Spotlight_Posts\repository()->find( 5 ) );
 
-		Schedule\set_expiry( $post_id, 0 );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, 0 );
 
 		$this->assertSame(
 			array( $post_id ),
-			wp_list_pluck( Query\get_featured_posts( 5 ), 'id' )
+			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' )
 		);
 	}
 
@@ -236,11 +236,11 @@ class ScheduleTest extends TestCase {
 	public function test_future_expiry_does_not_hide_the_post(): void {
 		$post_id = $this->create_featured_post();
 
-		Schedule\set_expiry( $post_id, time() + DAY_IN_SECONDS );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, time() + DAY_IN_SECONDS );
 
 		$this->assertSame(
 			array( $post_id ),
-			wp_list_pluck( Query\get_featured_posts( 5 ), 'id' )
+			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' )
 		);
 	}
 
@@ -250,19 +250,19 @@ class ScheduleTest extends TestCase {
 	public function test_deleting_a_post_unschedules_its_expiry(): void {
 		$post_id = $this->create_featured_post();
 
-		Schedule\set_expiry( $post_id, time() + HOUR_IN_SECONDS );
+		\Spotlight_Posts\schedule()->set_expiry( $post_id, time() + HOUR_IN_SECONDS );
 
 		wp_delete_post( $post_id, true );
 
-		$this->assertFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $post_id ) ) );
+		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $post_id ) ) );
 	}
 
 	/**
 	 * The stored value is always a non-negative integer.
 	 */
 	public function test_sanitize_normalises_the_stored_value(): void {
-		$this->assertSame( 0, Schedule\sanitize_meta( -5 ) );
-		$this->assertSame( 0, Schedule\sanitize_meta( 'nonsense' ) );
-		$this->assertSame( 1234567890, Schedule\sanitize_meta( '1234567890' ) );
+		$this->assertSame( 0, \Spotlight_Posts\schedule()->sanitize_meta( -5 ) );
+		$this->assertSame( 0, \Spotlight_Posts\schedule()->sanitize_meta( 'nonsense' ) );
+		$this->assertSame( 1234567890, \Spotlight_Posts\schedule()->sanitize_meta( '1234567890' ) );
 	}
 }
