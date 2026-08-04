@@ -9,7 +9,7 @@ declare( strict_types = 1 );
 
 namespace Spotlight_Posts\Tests;
 
-use Spotlight_Posts\Block;
+use Spotlight_Posts\Frontend\Block;
 use Spotlight_Posts\Featured\Index;
 
 /**
@@ -37,7 +37,7 @@ class BlockTest extends TestCase {
 		);
 
 		try {
-			return Block\render( $attributes );
+			return \Spotlight_Posts\Plugin::instance()->get( Block::class )->render( $attributes );
 		} finally {
 			\WP_Block_Supports::$block_to_render = $previous;
 		}

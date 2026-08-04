@@ -161,7 +161,7 @@ class QueryTest extends TestCase {
 	public function test_editing_a_post_refreshes_the_cached_payload(): void {
 		$post_id = $this->create_featured_post( 'Before' );
 
-		$this->assertSame( 'Before', \Spotlight_Posts\repository()->find( 5 )[0]['title'] );
+		$this->assertSame( 'Before', \Spotlight_Posts\repository()->find( 5 )[0]->title );
 
 		wp_update_post(
 			array(
@@ -170,7 +170,7 @@ class QueryTest extends TestCase {
 			)
 		);
 
-		$this->assertSame( 'After', \Spotlight_Posts\repository()->find( 5 )[0]['title'] );
+		$this->assertSame( 'After', \Spotlight_Posts\repository()->find( 5 )[0]->title );
 	}
 
 	/**
@@ -188,10 +188,10 @@ class QueryTest extends TestCase {
 
 		$posts = \Spotlight_Posts\repository()->find( 5 );
 
-		$this->assertArrayHasKey( 'id', $posts[0] );
-		$this->assertArrayHasKey( 'title', $posts[0] );
-		$this->assertArrayHasKey( 'url', $posts[0] );
-		$this->assertArrayHasKey( 'excerpt', $posts[0] );
-		$this->assertIsInt( $posts[0]['id'] );
+		$this->assertInstanceOf( \Spotlight_Posts\Featured\FeaturedPost::class, $posts[0] );
+		$this->assertIsInt( $posts[0]->id );
+		$this->assertIsString( $posts[0]->title );
+		$this->assertIsString( $posts[0]->url );
+		$this->assertIsString( $posts[0]->excerpt );
 	}
 }

@@ -89,7 +89,7 @@ final class Repository implements Registrable {
 	 * Fetch the spotlighted posts as a lightweight array.
 	 *
 	 * @param int $number_of_posts How many to return. Clamped to MIN_POSTS..MAX_POSTS.
-	 * @return array<int, array{id:int, title:string, url:string, excerpt:string}> Posts.
+	 * @return FeaturedPost[] Spotlighted posts, in index order.
 	 */
 	public function find( int $number_of_posts = 5 ): array {
 		$number_of_posts = max( self::MIN_POSTS, min( self::MAX_POSTS, $number_of_posts ) );
@@ -98,7 +98,12 @@ final class Repository implements Registrable {
 		$cached = $this->cache->get( $key );
 
 		if ( null !== $cached ) {
-			return $cached;
+			return array_map(
+				static function ( array $data ): FeaturedPost {
+					return FeaturedPost::from_array( $data );
+				},
+				$cached
+			);
 		}
 
 		$ids = $this->index->ids();
@@ -140,15 +145,23 @@ final class Repository implements Registrable {
 				continue;
 			}
 
-			$posts[] = array(
-				'id'      => (int) $post->ID,
-				'title'   => get_the_title( $post ),
-				'url'     => (string) get_permalink( $post ),
-				'excerpt' => wp_strip_all_tags( get_the_excerpt( $post ) ),
-			);
+			$posts[] = FeaturedPost::from_post( $post );
 		}
 
-		$this->cache->set( $key, $posts );
+		/*
+		 * Plain arrays go into the cache, not serialized objects. A serialized class
+		 * breaks the moment its shape changes, and every entry written before a deploy
+		 * would fail to unserialize after it.
+		 */
+		$this->cache->set(
+			$key,
+			array_map(
+				static function ( FeaturedPost $post ): array {
+					return $post->to_array();
+				},
+				$posts
+			)
+		);
 
 		return $posts;
 	}

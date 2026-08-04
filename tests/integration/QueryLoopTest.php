@@ -10,7 +10,7 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts\Featured\Index;
-use Spotlight_Posts\Query_Loop;
+use Spotlight_Posts\Frontend\QueryLoopVariation;
 use Spotlight_Posts\Featured\Schedule;
 
 /**
@@ -27,6 +27,15 @@ class QueryLoopTest extends TestCase {
 	 * @param array $query Query context.
 	 * @return \WP_Block Block with that context.
 	 */
+	/**
+	 * The registered variation service.
+	 *
+	 * @return QueryLoopVariation Variation service.
+	 */
+	private function variation(): QueryLoopVariation {
+		return \Spotlight_Posts\Plugin::instance()->get( QueryLoopVariation::class );
+	}
+
 	private function template_block( array $query ): \WP_Block {
 		return new \WP_Block(
 			array(
@@ -41,7 +50,7 @@ class QueryLoopTest extends TestCase {
 	 * A block belonging to our variation.
 	 */
 	private function featured_block(): \WP_Block {
-		return $this->template_block( array( 'namespace' => Query_Loop\VARIATION ) );
+		return $this->template_block( array( 'namespace' => QueryLoopVariation::VARIATION ) );
 	}
 
 	/**
@@ -53,7 +62,7 @@ class QueryLoopTest extends TestCase {
 
 		\Spotlight_Posts\index()->set( array( $b, $a ) );
 
-		$this->assertSame( array( $b, $a ), Query_Loop\get_eligible_ids() );
+		$this->assertSame( array( $b, $a ), \Spotlight_Posts\repository()->eligible_ids() );
 	}
 
 	/**
@@ -66,7 +75,7 @@ class QueryLoopTest extends TestCase {
 
 		update_post_meta( $expired, Schedule::META_KEY, time() - 60 );
 
-		$ids = Query_Loop\get_eligible_ids();
+		$ids = \Spotlight_Posts\repository()->eligible_ids();
 
 		$this->assertContains( $live, $ids );
 		$this->assertNotContains( $expired, $ids );
@@ -79,23 +88,23 @@ class QueryLoopTest extends TestCase {
 	 * to every post on the site.
 	 */
 	public function test_empty_index_yields_a_sentinel(): void {
-		$this->assertSame( array( 0 ), Query_Loop\get_eligible_ids() );
+		$this->assertSame( array( 0 ), \Spotlight_Posts\repository()->eligible_ids() );
 	}
 
 	/**
 	 * The variation is recognised from the query context.
 	 */
 	public function test_variation_is_detected(): void {
-		$this->assertTrue( Query_Loop\is_featured_variation( $this->featured_block() ) );
+		$this->assertTrue( $this->variation()->is_featured_variation( $this->featured_block() ) );
 	}
 
 	/**
 	 * Any other Query Loop is not ours.
 	 */
 	public function test_other_query_loops_are_not_detected(): void {
-		$this->assertFalse( Query_Loop\is_featured_variation( $this->template_block( array() ) ) );
-		$this->assertFalse( Query_Loop\is_featured_variation( $this->template_block( array( 'namespace' => 'someone/else' ) ) ) );
-		$this->assertFalse( Query_Loop\is_featured_variation( null ) );
+		$this->assertFalse( $this->variation()->is_featured_variation( $this->template_block( array() ) ) );
+		$this->assertFalse( $this->variation()->is_featured_variation( $this->template_block( array( 'namespace' => 'someone/else' ) ) ) );
+		$this->assertFalse( $this->variation()->is_featured_variation( null ) );
 	}
 
 	/**
@@ -107,7 +116,7 @@ class QueryLoopTest extends TestCase {
 
 		\Spotlight_Posts\index()->set( array( $b, $a ) );
 
-		$vars = Query_Loop\filter_query_vars(
+		$vars = $this->variation()->filter_query_vars(
 			array( 'post_type' => 'post', 'order' => 'DESC' ),
 			$this->featured_block(),
 			1
@@ -124,7 +133,7 @@ class QueryLoopTest extends TestCase {
 	public function test_other_query_vars_are_preserved(): void {
 		$this->create_featured_post();
 
-		$vars = Query_Loop\filter_query_vars(
+		$vars = $this->variation()->filter_query_vars(
 			array(
 				'post_type'      => 'post',
 				'posts_per_page' => 3,
@@ -145,7 +154,7 @@ class QueryLoopTest extends TestCase {
 		$this->create_featured_post();
 
 		$original = array( 'post_type' => 'post', 'order' => 'DESC' );
-		$vars     = Query_Loop\filter_query_vars( $original, $this->template_block( array() ), 1 );
+		$vars     = $this->variation()->filter_query_vars( $original, $this->template_block( array() ), 1 );
 
 		$this->assertSame( $original, $vars );
 	}
@@ -159,7 +168,7 @@ class QueryLoopTest extends TestCase {
 		$request = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
 		$request->set_param( 'spotlight_featured', true );
 
-		$args = Query_Loop\filter_rest_query( array( 'post_type' => 'post' ), $request );
+		$args = $this->variation()->filter_rest_query( array( 'post_type' => 'post' ), $request );
 
 		$this->assertSame( array( $post_id ), $args['post__in'] );
 		$this->assertSame( 'post__in', $args['orderby'] );
@@ -174,14 +183,14 @@ class QueryLoopTest extends TestCase {
 		$request  = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
 		$original = array( 'post_type' => 'post' );
 
-		$this->assertSame( $original, Query_Loop\filter_rest_query( $original, $request ) );
+		$this->assertSame( $original, $this->variation()->filter_rest_query( $original, $request ) );
 	}
 
 	/**
 	 * The collection parameter is advertised, so the editor may send it.
 	 */
 	public function test_rest_collection_param_is_registered(): void {
-		$params = Query_Loop\add_rest_collection_param( array() );
+		$params = $this->variation()->add_rest_collection_param( array() );
 
 		$this->assertArrayHasKey( 'spotlight_featured', $params );
 		$this->assertSame( 'boolean', $params['spotlight_featured']['type'] );
