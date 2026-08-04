@@ -72,8 +72,13 @@ about what is featured.
 ```bash
 composer install     # PHPCS + WordPress VIP coding standards
 npm install          # @wordpress/scripts build toolchain
-npm run build        # compiles src/ -> build/
+npm run build        # compiles blocks/ -> build/
 ```
+
+`src/` is PHP and `blocks/` is JavaScript — deliberately separated, because PSR-4 wants
+PHP in `src/` while `wp-scripts` defaults to `src/` for JavaScript, and a directory
+holding both tells you nothing at a glance. `--webpack-src-dir=blocks` redirects the
+bundler.
 
 `npm run build` produces two entry points: `build/featured-list` for the dedicated block,
 and `build/query-loop` for the Query Loop variation. They are separate `wp-scripts` runs
@@ -158,14 +163,49 @@ that `build/` must exist in the copy for the block to register.
 
 ---
 
+## Architecture
+
+Every class implements a small `Registrable` contract and declares its own hooks.
+`Plugin` is the composition root: it builds the object graph once and lets each service
+attach itself. The main plugin file registers **no hooks at all** — it holds a plugin
+header, a PSR-4 autoloader and one call to `Plugin::boot()`.
+
+Dependencies arrive through constructors. Nothing reaches out for a service it was not
+given, which is what keeps the graph readable:
+
+```
+Cache, PostTypes, Request      depend on nothing
+Index, Schedule                depend on Cache + PostTypes
+Repository                     depends on Index, Schedule, Cache, PostTypes
+Frontend / Admin / Rest / Cli  depend on Repository or Index
+```
+
+**That direction is the point.** Cache invalidation used to live inside the index and the
+scheduler, so both called into the query module while it called back into them — two
+circular dependencies. Nothing was broken, because PHP resolves those at call time, but
+neither module could be reasoned about or tested in isolation. Extracting `Support\Cache`
+gave all three a collaborator they depend on one way only.
+
+### What was deliberately not done
+
+Wrapping the existing functions in static classes would have added ceremony and kept both
+cycles. There are no static-only classes here, no interfaces with a single
+implementation, and no getters around plain data. `Registrable` earns its place because a
+dozen classes implement it; `FeaturedPost` earns its because an array shape documented in
+a docblock is enforced by nothing.
+
+`Plugin::instance()` exists for exactly two callers — the activation hook, which runs
+before anything holds a reference, and the test suite, which is a composition root of its
+own. It is not a general-purpose service locator, and application code does not use it.
+
 ## VIP-relevant design decisions
 
 These are the parts worth reviewing.
 
 ### Caching: versioned keys, not key enumeration
 
-`includes/query.php` caches each result set in the object cache under a key that
-embeds a **cache version integer**:
+`Support\Cache` stores each result set under a key that embeds a **cache version
+integer**:
 
 ```
 featured_v<version>_n<count>
@@ -174,12 +214,11 @@ featured_v<version>_n<count>
 Invalidation is `wp_cache_incr()` on that single version key. Every previously cached
 permutation is orphaned at once and ages out on its own.
 
-It fires from two directions. Every index mutation routes through `Index\set_ids()`,
-which invalidates as it writes — so featuring a post through the meta box, a bulk action,
-Quick Edit, the row toggle, WP-CLI or the REST meta API all converge on the same
-invalidation. Separately, `save_post_post` covers edits that change what the list
-*renders* without changing who is in it: a retitled post, a new excerpt, a draft going
-live.
+It fires from two directions. Every index mutation routes through `Index::set()`, which
+flushes as it writes — so featuring a post through the meta box, a bulk action, Quick
+Edit, the row toggle, WP-CLI or the REST meta API all converge on the same invalidation.
+Separately, `save_post` covers edits that change what the list *renders* without changing
+who is in it: a retitled post, a new excerpt, a draft going live.
 
 This matters on VIP specifically. The object cache is shared and remote, and it
 offers no "delete by prefix" primitive — so the alternative is tracking and
@@ -256,7 +295,7 @@ The cap of 100 IDs is a platform constraint, not a product one. The option is au
 so it lands in `alloptions` on every request; VIP runs an `alloptions-limit` mu-plugin
 precisely because oversized autoloaded options degrade every page load.
 
-**One suppression remains**, in `Index\rebuild()` — the one place that still has to
+**One suppression remains**, in `Index::rebuild()` — the one place that still has to
 search by meta. It runs on activation and on demand via WP-CLI, never on a front-end
 request.
 
@@ -420,7 +459,11 @@ src/
 │       └── AjaxToggle.php   admin-ajax handler and its assets
 ├── Rest/PostsController.php GET /wp-json/spotlight/v1/posts
 └── Cli/Command.php          wp spotlight rebuild | list
-src/featured-list, src/index.js   Block editor sources (compiled to build/)
+blocks/                      Block editor sources, compiled to build/
+├── featured-list/           block.json + editor script for the dedicated block
+└── query-loop.js            registers the Query Loop variation
+assets/                      Hand-written admin CSS and JS, shipped as-is
+build/                       Compiled block output (gitignored)
 ```
 
 Every class implements `Registrable` and declares its own hooks — the main plugin file

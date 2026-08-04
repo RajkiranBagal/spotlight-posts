@@ -5,9 +5,9 @@
 	"license": "GPL-2.0-or-later",
 	"private": true,
 	"scripts": {
-		"build": "wp-scripts build && npm run build:query-loop",
-		"build:query-loop": "wp-scripts build src/index.js --output-path=build/query-loop && rm -rf build/query-loop/featured-list",
-		"start": "wp-scripts start"
+		"build": "wp-scripts build --webpack-src-dir=blocks && npm run build:query-loop",
+		"build:query-loop": "wp-scripts build blocks/query-loop.js --output-path=build/query-loop && rm -rf build/query-loop/featured-list",
+		"start": "wp-scripts start --webpack-src-dir=blocks"
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^30.0.0",
