@@ -112,7 +112,8 @@ final class Block implements Registrable {
 		$heading_tag = 'h' . max( 2, min( 6, $level ) );
 
 		$count = isset( $attributes['numberOfPosts'] ) ? (int) $attributes['numberOfPosts'] : 5;
-		$posts = $this->repository->find( $count );
+		$fill  = ! empty( $attributes['fillWithRecent'] );
+		$posts = $this->repository->find( $count, $fill );
 
 		ob_start();
 		?>

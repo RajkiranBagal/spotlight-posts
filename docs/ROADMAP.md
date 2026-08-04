@@ -13,11 +13,13 @@ under both a VIP code review and a real editorial team.
 | 3 | Display — Query Loop variation | ✅ done |
 | 4 | Interactivity API — search, filtering, pagination | ❌ declined |
 | 5 | Polish — post-type agnostic, uninstall, a11y, i18n/RTL | ✅ done |
-| 6 | Named slots, fallback fill, labels | planned |
+| 6 | Fallback fill and labels | planned |
+| — | Named slots | ❌ declined |
 
-**Phases 0–3 and 5 are complete. Phase 4 was considered and declined.** Phase 4 is
-where scope risk concentrates: search on VIP means Elasticsearch, which is a research
-task rather than an afternoon.
+**Phases 0–3 and 5 are complete.** Phase 4 and named slots were each planned, then
+declined on the same grounds: both were sized for a problem this plugin does not have.
+The reasoning for each is kept below rather than deleted, because a plan that was argued
+for and then reversed is more useful to a reader than a plan that quietly disappeared.
 
 **Two goals, deliberately paired:**
 
@@ -195,86 +197,53 @@ filtering.
 
 ---
 
-## Phase 6 — Named slots, fallback fill and labels · ~1 week
+## Phase 6 — Fallback fill and labels · ~1.5 days
 
-The one structural gap, plus two cheap wins that are easier to build on top of it than
-before it.
+Two small display features. **Named slots were planned here and then declined** — the
+reasoning is below, because the plan argued for them and the reversal should be on the
+record.
 
-### Why now rather than later
+### Named slots — considered, not built
 
-There is one featured list. Real editorial use wants several: a homepage hero, sidebar
-picks, a newsletter block, category features. Adding that changes three things that are
-public contracts:
+Slots would have replaced the single featured list with several named ones: a homepage
+hero, sidebar picks, a newsletter selection, each with its own order and schedule. It was
+the only structural gap, and comparable plugins converge on it.
 
-```
-spotlight_featured_post_ids   the option key
-_spotlight_featured           the per-post meta shape
-/spotlight/v1/posts           the REST route
-```
+It was declined on fit rather than cost. Slots pay off when a site shows featured posts in
+several places that need to show *different* posts. A blog with one such place gets a
+dropdown containing one option and a more complicated data model underneath.
 
-Retrofitting means a data migration, a REST version bump and a block deprecation.
-Doing it now costs renaming demo data. This is the same timing argument that made the
-VIP → Spotlight rename nearly free when it happened and expensive afterwards.
-
-### Data model
-
-Slots are registered through a filter, defaulting to a single `default` slot so an
-existing install behaves as it does today.
-
-**Meta becomes multi-value rather than boolean.** One key, `_spotlight_slot`, with a row
-per slot the post belongs to — the WordPress-idiomatic shape for a set, and it keeps
-`rebuild()` a single query per slot rather than one per meta key.
-
-**One option per slot**, `spotlight_slot_{slug}`, each capped at `MAX_IDS`. A single map
-option would grow with slots × 100 IDs and land in `alloptions` on every request; separate
-options keep each under a kilobyte and let a removed slot be deleted cleanly.
-
-> **Open question for the build:** the cap is currently 100 IDs total. With five slots
-> that is 500 autoloaded integers. Either the cap becomes per-site rather than per-slot,
-> or slots beyond the first few stop autoloading. Decide before writing the migration,
-> not after.
-
-### Delivery — four stacked PRs
-
-| PR | Contents |
-| --- | --- |
-| 1 | `Support\Slots`, the meta and option shape, a slot-aware `Index`, and the migration |
-| 2 | Slot-aware `Repository`, REST `?slot=`, block attribute, Query Loop variation, CLI `--slot` |
-| 3 | Slot-aware admin: column shows membership, per-slot bulk actions, meta box, order screen switcher |
-| 4 | Fallback fill and per-post labels |
+The timing argument still holds: adding slots later means migrating the meta shape, the
+option key and the REST route. That is the price of deferring, and it is accepted
+knowingly rather than overlooked.
 
 ### Fallback fill
 
-When fewer posts are featured than the block asks for, optionally top up with recent
-published posts not already in the list. Prevents a homepage that looks broken because
-someone unfeatured two things.
+When fewer posts are featured than a block asks for, optionally top up with recent
+published posts that are not already in the list. A section asking for five and finding
+three renders three today, which looks broken rather than curated.
 
-The top-up is a second query, so it stays bounded and caches under the same versioned key
-as the list it completes.
+- A block attribute, defaulting to off, so existing content is unaffected.
+- The top-up is a second query, bounded to the shortfall and excluding what is already
+  shown.
+- The cache key varies by the flag, because the same count with filling on and off are
+  different results.
+- Invalidation needs no new hooks: publishing a post already flushes through `save_post`.
 
 ### Per-post labels
 
-A short sanitized string — "Editor's pick", "Trending" — stored per post and rendered as
-a badge. Escaped at output like everything else. Per post rather than per slot: a post
-that is an editor's pick is one everywhere it appears.
+A short sanitized string — "Editor's pick", "Trending" — stored per post and rendered as a
+badge above the title. Escaped at output like everything else.
 
-### Risks
-
-- **Migration is mandatory**, not optional. Existing installs hold data under the old key.
-  It needs a WP-CLI command, an idempotent upgrade routine, and a block deprecation so
-  saved content keeps rendering.
-- **Bulk actions turn combinatorial.** "Mark as featured" becomes one action per slot.
-  Beyond three or four slots the dropdown is unusable and it needs a different UI.
-- **Cache keys now vary by slot.** The versioned key already handles this; it is called
-  out so nobody adds a second cache layer to solve it.
+Editable from the meta box alongside the featured checkbox. Carried on the `FeaturedPost`
+DTO so the block and the REST route both see it.
 
 ### Deliberately excluded
 
-**View-count analytics**, despite appearing in most plugins of this kind. On VIP the edge
-cache means PHP does not run for most pageviews, so counts are silently wrong, and writing
-to the database per request is the anti-pattern the platform exists to prevent. Doing it
-properly means sampling, a queue, or reading from an analytics provider — a project, not a
-feature.
+**View-count analytics.** On VIP the edge cache means PHP does not run for most pageviews,
+so counts are silently wrong, and writing per request is the anti-pattern the platform
+exists to prevent. Doing it properly means sampling, a queue, or an analytics provider — a
+project, not a feature.
 
 **Auto-feature rules.** Editors want control; automation that overrides them gets turned
 off.
