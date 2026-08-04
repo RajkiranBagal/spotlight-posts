@@ -32,6 +32,10 @@
 		"headingLevel": {
 			"type": "number",
 			"default": 2
+		},
+		"fillWithRecent": {
+			"type": "boolean",
+			"default": false
 		}
 	},
 	"editorScript": "file:./index.js"

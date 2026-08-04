@@ -8,7 +8,12 @@
 
 import { registerBlockType } from '@wordpress/blocks';
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
-import { PanelBody, RangeControl, TextControl } from '@wordpress/components';
+import {
+	PanelBody,
+	RangeControl,
+	TextControl,
+	ToggleControl,
+} from '@wordpress/components';
 import ServerSideRender from '@wordpress/server-side-render';
 import { __ } from '@wordpress/i18n';
 
@@ -17,7 +22,8 @@ import metadata from './block.json';
 registerBlockType( metadata.name, {
 	edit: ( { attributes, setAttributes } ) => {
 		const blockProps = useBlockProps();
-		const { heading, numberOfPosts, headingLevel } = attributes;
+		const { heading, numberOfPosts, headingLevel, fillWithRecent } =
+			attributes;
 
 		return (
 			<>
@@ -69,6 +75,21 @@ registerBlockType( metadata.name, {
 							}
 							min={ 2 }
 							max={ 6 }
+						/>
+						<ToggleControl
+							__nextHasNoMarginBottom
+							label={ __(
+								'Fill with recent posts',
+								'spotlight-posts'
+							) }
+							help={ __(
+								'When fewer posts are featured than requested, top up with the most recent published posts.',
+								'spotlight-posts'
+							) }
+							checked={ !! fillWithRecent }
+							onChange={ ( value ) =>
+								setAttributes( { fillWithRecent: value } )
+							}
 						/>
 					</PanelBody>
 				</InspectorControls>
