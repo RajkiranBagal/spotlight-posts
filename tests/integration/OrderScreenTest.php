@@ -77,7 +77,7 @@ class OrderScreenTest extends TestCase {
 		$a = $this->create_featured_post( 'Alpha' );
 		$b = $this->create_featured_post( 'Beta' );
 
-		\Spotlight_Posts\index()->set( array( $b, $a ) );
+		$this->index()->set( array( $b, $a ) );
 
 		ob_start();
 		$this->screen()->render_page();
@@ -125,7 +125,7 @@ class OrderScreenTest extends TestCase {
 		$b = $this->create_featured_post( 'Beta' );
 		$c = $this->create_featured_post( 'Gamma' );
 
-		\Spotlight_Posts\index()->set( array( $a, $b, $c ) );
+		$this->index()->set( array( $a, $b, $c ) );
 
 		$this->assertSame(
 			array( $c, $a, $b ),
@@ -144,7 +144,7 @@ class OrderScreenTest extends TestCase {
 		$featured   = $this->create_featured_post( 'Featured' );
 		$unfeatured = self::factory()->post->create( array( 'post_status' => 'publish' ) );
 
-		\Spotlight_Posts\index()->set( array( $featured ) );
+		$this->index()->set( array( $featured ) );
 
 		$result = $this->save_order( array( $unfeatured, $featured ) );
 
@@ -162,7 +162,7 @@ class OrderScreenTest extends TestCase {
 		$a = $this->create_featured_post( 'Alpha' );
 		$b = $this->create_featured_post( 'Beta' );
 
-		\Spotlight_Posts\index()->set( array( $a, $b ) );
+		$this->index()->set( array( $a, $b ) );
 
 		$result = $this->save_order( array( $b ) );
 
@@ -176,7 +176,7 @@ class OrderScreenTest extends TestCase {
 	public function test_save_with_an_empty_order_changes_nothing(): void {
 		$a = $this->create_featured_post( 'Alpha' );
 
-		\Spotlight_Posts\index()->set( array( $a ) );
+		$this->index()->set( array( $a ) );
 
 		$this->assertSame( array( $a ), $this->save_order( array() ) );
 	}
@@ -188,18 +188,18 @@ class OrderScreenTest extends TestCase {
 		$a = $this->create_featured_post( 'Alpha' );
 		$b = $this->create_featured_post( 'Beta' );
 
-		\Spotlight_Posts\index()->set( array( $a, $b ) );
+		$this->index()->set( array( $a, $b ) );
 
 		$this->assertSame(
 			array( $a, $b ),
-			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' )
+			wp_list_pluck( $this->repository()->find( 5 ), 'id' )
 		);
 
 		$this->save_order( array( $b, $a ) );
 
 		$this->assertSame(
 			array( $b, $a ),
-			wp_list_pluck( \Spotlight_Posts\repository()->find( 5 ), 'id' ),
+			wp_list_pluck( $this->repository()->find( 5 ), 'id' ),
 			'The reordered list should be visible immediately.'
 		);
 	}
@@ -211,11 +211,11 @@ class OrderScreenTest extends TestCase {
 		$a = $this->create_featured_post( 'Alpha' );
 		$b = $this->create_featured_post( 'Beta' );
 
-		\Spotlight_Posts\index()->set( array( $a, $b ) );
+		$this->index()->set( array( $a, $b ) );
 
 		delete_post_meta( $a, Index::META_KEY );
 
-		$this->assertSame( array( $b ), \Spotlight_Posts\index()->ids() );
+		$this->assertSame( array( $b ), $this->index()->ids() );
 	}
 
 	/**

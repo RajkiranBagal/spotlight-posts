@@ -225,7 +225,7 @@ class MetaBoxTest extends TestCase {
 		$this->metaBox()->save( $this->post_id );
 
 		$this->assertTrue( $this->is_featured() );
-		$this->assertGreaterThan( time(), \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );
+		$this->assertGreaterThan( time(), $this->schedule()->expiry_for( $this->post_id ) );
 		$this->assertNotFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $this->post_id ) ) );
 	}
 
@@ -233,14 +233,14 @@ class MetaBoxTest extends TestCase {
 	 * Saving without an expiry clears any previously stored one.
 	 */
 	public function test_save_without_an_expiry_clears_it(): void {
-		\Spotlight_Posts\schedule()->set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
+		$this->schedule()->set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
 
 		$this->post_form( true );
 		$_POST[ MetaBox::UNTIL_FIELD_NAME ] = '';
 
 		$this->metaBox()->save( $this->post_id );
 
-		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );
+		$this->assertSame( 0, $this->schedule()->expiry_for( $this->post_id ) );
 		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $this->post_id ) ) );
 	}
 
@@ -249,14 +249,14 @@ class MetaBoxTest extends TestCase {
 	 */
 	public function test_unfeaturing_clears_the_expiry(): void {
 		update_post_meta( $this->post_id, Index::META_KEY, '1' );
-		\Spotlight_Posts\schedule()->set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
+		$this->schedule()->set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
 
 		$this->post_form( false );
 
 		$this->metaBox()->save( $this->post_id );
 
 		$this->assertFalse( $this->is_featured() );
-		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );
+		$this->assertSame( 0, $this->schedule()->expiry_for( $this->post_id ) );
 		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $this->post_id ) ) );
 	}
 }

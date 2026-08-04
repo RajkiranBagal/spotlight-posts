@@ -391,25 +391,41 @@ humans do not review. This repo is the source side of that split.
 ## Layout
 
 ```
-spotlight-posts/
-├── spotlight-posts.php   Plugin header, constants, supported post types, hooks
-├── uninstall.php         Removes the plugin's data on delete
-├── includes/
-│   ├── schedule.php         Expiry meta, cron scheduling, read-time filter
-│   ├── index.php            Ordered ID index — the reason reads hit the primary key
-│   ├── query.php            Cached, bounded featured-posts query
-│   ├── meta-box.php         Editor checkbox, meta registration, save handler
-│   ├── block.php            Dynamic block registration + server render
-│   ├── rest.php             GET /wp-json/spotlight/v1/posts
-│   ├── query-loop.php       Featured variation of core's Query Loop
-│   ├── admin/list-table.php Column, bulk actions, Quick Edit, filter, AJAX toggle
-│   ├── admin/order-screen.php  Drag-to-reorder screen
-│   └── cli.php              wp spotlight rebuild | list
-├── src/featured-list/       Block editor source (compiled to build/)
-├── .phpcs.xml               WordPress-VIP-Go ruleset, PHP 8.1+
-├── composer.json            PHPCS tooling
-└── package.json             @wordpress/scripts
+spotlight-posts.php          Plugin header, PSR-4 autoloader, Plugin::boot()
+uninstall.php                Removes the plugin's data on delete
+src/
+├── Plugin.php               Composition root — builds services, registers them
+├── Registrable.php          Contract: a component that attaches its own hooks
+├── Support/
+│   ├── Cache.php            Versioned object cache
+│   ├── PostTypes.php        Which post types can be spotlighted
+│   ├── Request.php          Sanitized superglobal reads
+│   └── Translations.php     Text domain loading
+├── Featured/
+│   ├── Index.php            Ordered ID index — why reads hit the primary key
+│   ├── Repository.php       Cached, bounded read path
+│   ├── Schedule.php         Expiry meta, cron, read-time filter
+│   └── FeaturedPost.php     Readonly DTO
+├── Frontend/
+│   ├── Block.php            Dynamic block + server render
+│   └── QueryLoopVariation.php
+├── Admin/
+│   ├── MetaBox.php          Editor checkbox and expiry field
+│   ├── OrderScreen.php      Drag-to-reorder screen
+│   └── ListTable/
+│       ├── Column.php       The Featured column and its toggle
+│       ├── BulkActions.php  Mark / unmark, and the result notice
+│       ├── QuickEdit.php    Inline checkbox
+│       ├── Filter.php       Featured / Not featured dropdown
+│       └── AjaxToggle.php   admin-ajax handler and its assets
+├── Rest/PostsController.php GET /wp-json/spotlight/v1/posts
+└── Cli/Command.php          wp spotlight rebuild | list
+src/featured-list, src/index.js   Block editor sources (compiled to build/)
 ```
+
+Every class implements `Registrable` and declares its own hooks — the main plugin file
+registers none. Dependencies arrive through constructors; nothing reaches for a service
+it was not given.
 
 ---
 

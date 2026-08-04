@@ -77,63 +77,6 @@ define( 'SPOTLIGHT_POSTS_DIR', plugin_dir_path( __FILE__ ) );
  */
 define( 'SPOTLIGHT_POSTS_FILE', __FILE__ );
 
-/**
- * Post types this plugin operates on.
- *
- * Delegates to the PostTypes service. Kept as a function while the remaining procedural
- * modules are converted; each becomes a class that receives the service directly.
- *
- * @deprecated Superseded by Support\PostTypes::all().
- *
- * @return string[] Supported post type slugs.
- */
-function supported_post_types(): array {
-	return Plugin::instance()->get( Support\PostTypes::class )->all();
-}
-
-/**
- * The featured posts repository.
- *
- * @deprecated Transitional. Modules that become classes receive this through their
- *             constructor instead, and these accessors go away with the last of them.
- *
- * @return Featured\Repository Repository service.
- */
-function repository(): Featured\Repository {
-	return Plugin::instance()->get( Featured\Repository::class );
-}
-
-/**
- * The ordered ID index.
- *
- * @deprecated Transitional. See repository().
- *
- * @return Featured\Index Index service.
- */
-function index(): Featured\Index {
-	return Plugin::instance()->get( Featured\Index::class );
-}
-
-/**
- * The expiry scheduler.
- *
- * @deprecated Transitional. See repository().
- *
- * @return Featured\Schedule Schedule service.
- */
-function schedule(): Featured\Schedule {
-	return Plugin::instance()->get( Featured\Schedule::class );
-}
-
-/*
- * Schedule, Index and Query now live in src/ as classes and load through the autoloader.
- * What remains here is procedural and is converted in the following pull requests.
- */
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
-	require_once SPOTLIGHT_POSTS_DIR . 'includes/cli.php';
-}
-
-
 Plugin::boot();
 
 /*

@@ -13,6 +13,7 @@ use Spotlight_Posts\Featured\Index;
 use Spotlight_Posts\Featured\Repository;
 use Spotlight_Posts\Featured\Schedule;
 use Spotlight_Posts\Admin\ListTable\AjaxToggle;
+use Spotlight_Posts\Cli\Command;
 use Spotlight_Posts\Admin\ListTable\BulkActions;
 use Spotlight_Posts\Admin\ListTable\Column;
 use Spotlight_Posts\Admin\ListTable\Filter;
@@ -83,6 +84,10 @@ final class Plugin {
 			PostsController::class    => new PostsController( $repository ),
 		);
 
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$this->services[ Command::class ] = new Command( $index );
+		}
+
 		/*
 		 * Admin services are only constructed in the admin. Building them on a front-end
 		 * request would allocate objects that register nothing.
@@ -115,10 +120,10 @@ final class Plugin {
 	/**
 	 * The booted instance, booting it if necessary.
 	 *
-	 * Exists so the remaining procedural modules can reach the services while they are
-	 * converted. It is transitional scaffolding, not the intended way to obtain a
-	 * dependency -- each module that becomes a class takes what it needs through its
-	 * constructor instead, and this goes away with the last of them.
+	 * Two callers only: the activation hook, which runs before anything holds a
+	 * reference, and the test suite, which is a composition root of its own. Application
+	 * code never reaches for a dependency -- every class receives what it needs through
+	 * its constructor, which is what keeps the dependency graph readable.
 	 *
 	 * @return Plugin Booted instance.
 	 */
