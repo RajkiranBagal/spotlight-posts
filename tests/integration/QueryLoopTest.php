@@ -9,9 +9,9 @@ declare( strict_types = 1 );
 
 namespace Spotlight_Posts\Tests;
 
-use Spotlight_Posts\Index;
+use Spotlight_Posts\Featured\Index;
 use Spotlight_Posts\Query_Loop;
-use Spotlight_Posts\Schedule;
+use Spotlight_Posts\Featured\Schedule;
 
 /**
  * @covers \Spotlight_Posts\Query_Loop
@@ -51,7 +51,7 @@ class QueryLoopTest extends TestCase {
 		$a = $this->create_featured_post( 'A' );
 		$b = $this->create_featured_post( 'B' );
 
-		Index\set_ids( array( $b, $a ) );
+		\Spotlight_Posts\index()->set( array( $b, $a ) );
 
 		$this->assertSame( array( $b, $a ), Query_Loop\get_eligible_ids() );
 	}
@@ -64,7 +64,7 @@ class QueryLoopTest extends TestCase {
 		$live    = $this->create_featured_post( 'Live' );
 		$expired = $this->create_featured_post( 'Expired' );
 
-		update_post_meta( $expired, Schedule\META_KEY, time() - 60 );
+		update_post_meta( $expired, Schedule::META_KEY, time() - 60 );
 
 		$ids = Query_Loop\get_eligible_ids();
 
@@ -105,7 +105,7 @@ class QueryLoopTest extends TestCase {
 		$a = $this->create_featured_post( 'A' );
 		$b = $this->create_featured_post( 'B' );
 
-		Index\set_ids( array( $b, $a ) );
+		\Spotlight_Posts\index()->set( array( $b, $a ) );
 
 		$vars = Query_Loop\filter_query_vars(
 			array( 'post_type' => 'post', 'order' => 'DESC' ),

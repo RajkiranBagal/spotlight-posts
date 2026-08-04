@@ -21,10 +21,44 @@ namespace Spotlight_Posts;
 defined( 'ABSPATH' ) || exit;
 
 /**
+ * PSR-4 autoloader for this plugin's classes.
+ *
+ * Hand-rolled rather than Composer's. The plugin has no runtime dependencies -- composer
+ * is used only for PHPCS and PHPUnit -- so shipping vendor/ purely to carry an autoloader
+ * would mean committing thousands of files for fifteen lines of work.
+ *
+ * @param string $class_name Fully qualified class name.
+ */
+spl_autoload_register(
+	static function ( string $class_name ): void {
+		$prefix = __NAMESPACE__ . '\\';
+
+		if ( 0 !== strpos( $class_name, $prefix ) ) {
+			return;
+		}
+
+		$relative = substr( $class_name, strlen( $prefix ) );
+		$path     = __DIR__ . '/src/' . str_replace( '\\', '/', $relative ) . '.php';
+
+		// realpath() plus a prefix check, so a crafted class name cannot traverse out of
+		// src/ and include an arbitrary file.
+		$real = realpath( $path );
+		$root = realpath( __DIR__ . '/src' );
+
+		if ( false !== $real && false !== $root && 0 === strpos( $real, $root ) ) {
+			require_once $real;
+		}
+	}
+);
+
+/**
  * Post meta key holding the featured flag.
  *
  * Underscore-prefixed so it is treated as protected meta and never surfaces in
  * the default custom fields UI.
+ *
+ * @deprecated Superseded by Featured\Index::META_KEY. Kept while the remaining
+ *             procedural modules are converted.
  */
 const META_KEY = '_spotlight_featured';
 
@@ -46,45 +80,55 @@ define( 'SPOTLIGHT_POSTS_FILE', __FILE__ );
 /**
  * Post types this plugin operates on.
  *
- * Deliberately not named get_post_types(): inside this namespace an unqualified call to
- * that would resolve to ours rather than WordPress's, shadowing core in a way that is
- * hard to spot when reading a single line.
+ * Delegates to the PostTypes service. Kept as a function while the remaining procedural
+ * modules are converted; each becomes a class that receives the service directly.
  *
- * Results are filtered through post_type_exists(), so a filter naming a type that was
- * never registered cannot produce meta bound to a type that does not exist.
+ * @deprecated Superseded by Support\PostTypes::all().
  *
  * @return string[] Supported post type slugs.
  */
 function supported_post_types(): array {
-	/**
-	 * Filters the post types that can be spotlighted.
-	 *
-	 * @param string[] $post_types Post type slugs. Defaults to just 'post'.
-	 */
-	$types = (array) apply_filters( 'spotlight_posts_post_types', array( 'post' ) );
-
-	$types = array_values(
-		array_unique(
-			array_filter(
-				array_map( 'strval', $types ),
-				static function ( string $type ): bool {
-					return '' !== $type && post_type_exists( $type );
-				}
-			)
-		)
-	);
-
-	/*
-	 * Falls back to 'post' rather than returning empty. An empty post_type is ignored by
-	 * WP_Query, which would silently widen every query instead of narrowing it -- the
-	 * same trap as an empty post__in.
-	 */
-	return empty( $types ) ? array( 'post' ) : $types;
+	return Plugin::instance()->get( Support\PostTypes::class )->all();
 }
 
-require_once SPOTLIGHT_POSTS_DIR . 'includes/schedule.php';
-require_once SPOTLIGHT_POSTS_DIR . 'includes/index.php';
-require_once SPOTLIGHT_POSTS_DIR . 'includes/query.php';
+/**
+ * The featured posts repository.
+ *
+ * @deprecated Transitional. Modules that become classes receive this through their
+ *             constructor instead, and these accessors go away with the last of them.
+ *
+ * @return Featured\Repository Repository service.
+ */
+function repository(): Featured\Repository {
+	return Plugin::instance()->get( Featured\Repository::class );
+}
+
+/**
+ * The ordered ID index.
+ *
+ * @deprecated Transitional. See repository().
+ *
+ * @return Featured\Index Index service.
+ */
+function index(): Featured\Index {
+	return Plugin::instance()->get( Featured\Index::class );
+}
+
+/**
+ * The expiry scheduler.
+ *
+ * @deprecated Transitional. See repository().
+ *
+ * @return Featured\Schedule Schedule service.
+ */
+function schedule(): Featured\Schedule {
+	return Plugin::instance()->get( Featured\Schedule::class );
+}
+
+/*
+ * Schedule, Index and Query now live in src/ as classes and load through the autoloader.
+ * What remains here is procedural and is converted in the following pull requests.
+ */
 require_once SPOTLIGHT_POSTS_DIR . 'includes/meta-box.php';
 require_once SPOTLIGHT_POSTS_DIR . 'includes/block.php';
 require_once SPOTLIGHT_POSTS_DIR . 'includes/rest.php';
@@ -114,22 +158,7 @@ function bootstrap(): void {
 	add_action( 'init', __NAMESPACE__ . '\\load_textdomain' );
 
 	add_action( 'init', __NAMESPACE__ . '\\Meta_Box\\register_meta' );
-	add_action( 'init', __NAMESPACE__ . '\\Schedule\\register_meta' );
 	add_action( 'init', __NAMESPACE__ . '\\Block\\register' );
-
-	/*
-	 * Scheduled expiry. The cron event clears the flag at the expiry moment, which
-	 * routes through the same index sync as any other unfeature -- so the cached lists
-	 * are invalidated then, rather than waiting for a TTL to lapse.
-	 */
-	add_action( Schedule\CRON_HOOK, __NAMESPACE__ . '\\Schedule\\handle_cron' );
-	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Schedule\\clear_on_unfeature', 10, 3 );
-	add_action( 'deleted_post', __NAMESPACE__ . '\\Schedule\\clear_on_delete' );
-
-	// An expiry change alters what the lists will contain, so it invalidates them too.
-	add_action( 'added_post_meta', __NAMESPACE__ . '\\Schedule\\invalidate_on_expiry_change', 10, 3 );
-	add_action( 'updated_post_meta', __NAMESPACE__ . '\\Schedule\\invalidate_on_expiry_change', 10, 3 );
-	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Schedule\\invalidate_on_expiry_change', 10, 3 );
 
 	/*
 	 * Per-type hooks. These are dynamic hook names, so a plugin supporting several post
@@ -176,26 +205,6 @@ function bootstrap(): void {
 		CLI\register();
 	}
 
-	/*
-	 * Index maintenance. Every mutation routes through Index\set_ids(), which also
-	 * invalidates the cached lists -- so these hooks keep the index correct and the
-	 * cache fresh in one step.
-	 *
-	 * The meta hooks catch the flag being written outside any editing flow, which
-	 * save_post never sees: WP-CLI, the REST meta endpoints, an admin-ajax toggle, or
-	 * another plugin calling update_post_meta() directly.
-	 */
-	add_action( 'added_post_meta', __NAMESPACE__ . '\\Index\\sync_on_write', 10, 4 );
-	add_action( 'updated_post_meta', __NAMESPACE__ . '\\Index\\sync_on_write', 10, 4 );
-	add_action( 'deleted_post_meta', __NAMESPACE__ . '\\Index\\sync_on_delete', 10, 3 );
-	add_action( 'deleted_post', __NAMESPACE__ . '\\Index\\sync_on_post_delete' );
-
-	/*
-	 * A save can change what the list renders without touching the flag or the index
-	 * -- a retitled post, a new excerpt, a draft going live. The index is already
-	 * correct in those cases; only the cached payload is stale.
-	 */
-	add_action( 'save_post', __NAMESPACE__ . '\\Query\\bump_cache_version' );
 }
 
 /**
@@ -237,6 +246,7 @@ function register_post_type_hooks(): void {
 	}
 }
 
+Plugin::boot();
 bootstrap();
 
 /*
@@ -244,4 +254,4 @@ bootstrap();
  * surfaces them immediately rather than waiting for the first read to notice the
  * option is missing.
  */
-register_activation_hook( __FILE__, __NAMESPACE__ . '\\Index\\rebuild' );
+register_activation_hook( __FILE__, array( Plugin::class, 'activate' ) );

@@ -95,7 +95,7 @@ function render_column( string $column, int $post_id ): void {
 		return;
 	}
 
-	$is_featured = '1' === get_post_meta( $post_id, Spotlight_Posts\META_KEY, true );
+	$is_featured = '1' === get_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY, true );
 
 	if ( ! current_user_can( 'edit_post', $post_id ) ) {
 		printf(
@@ -165,9 +165,9 @@ function handle_bulk_action( string $redirect_to, string $action, array $post_id
 		}
 
 		if ( BULK_FEATURE === $action ) {
-			update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
+			update_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY, '1' );
 		} else {
-			delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
+			delete_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY );
 		}
 
 		++$changed;
@@ -263,7 +263,7 @@ function bulk_action_notice(): void {
  * @param string $post_type Post type being edited.
  */
 function quick_edit_field( string $column, string $post_type ): void {
-	if ( COLUMN_ID !== $column || ! in_array( $post_type, Spotlight_Posts\supported_post_types(), true ) ) {
+	if ( COLUMN_ID !== $column || ! in_array( $post_type, \Spotlight_Posts\supported_post_types(), true ) ) {
 		return;
 	}
 
@@ -286,7 +286,7 @@ function quick_edit_field( string $column, string $post_type ): void {
  * @param string $post_type Post type being listed.
  */
 function filter_dropdown( string $post_type ): void {
-	if ( ! in_array( $post_type, Spotlight_Posts\supported_post_types(), true ) ) {
+	if ( ! in_array( $post_type, \Spotlight_Posts\supported_post_types(), true ) ) {
 		return;
 	}
 
@@ -325,7 +325,7 @@ function apply_filter( \WP_Query $query ): void {
 		return;
 	}
 
-	if ( ! in_array( (string) $query->get( 'post_type' ), Spotlight_Posts\supported_post_types(), true ) ) {
+	if ( ! in_array( (string) $query->get( 'post_type' ), \Spotlight_Posts\supported_post_types(), true ) ) {
 		return;
 	}
 
@@ -335,7 +335,7 @@ function apply_filter( \WP_Query $query ): void {
 		return;
 	}
 
-	$ids = Index\get_ids();
+	$ids = \Spotlight_Posts\index()->ids();
 
 	if ( 'featured' === $filter ) {
 		// An empty index means nothing matches. post__in ignores an empty array, so a
@@ -362,7 +362,7 @@ function enqueue_assets( string $hook ): void {
 
 	$screen = get_current_screen();
 
-	if ( ! $screen instanceof \WP_Screen || ! in_array( $screen->post_type, Spotlight_Posts\supported_post_types(), true ) ) {
+	if ( ! $screen instanceof \WP_Screen || ! in_array( $screen->post_type, \Spotlight_Posts\supported_post_types(), true ) ) {
 		return;
 	}
 
@@ -419,12 +419,12 @@ function ajax_toggle(): void {
 		wp_send_json_error( array( 'message' => __( 'You are not allowed to edit this post.', 'spotlight-posts' ) ), 403 );
 	}
 
-	$featured = '1' === get_post_meta( $post_id, Spotlight_Posts\META_KEY, true );
+	$featured = '1' === get_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY, true );
 
 	if ( $featured ) {
-		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
+		delete_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY );
 	} else {
-		update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $post_id, \Spotlight_Posts\Featured\Index::META_KEY, '1' );
 	}
 
 	wp_send_json_success(

@@ -10,7 +10,7 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
-use Spotlight_Posts\Index;
+use Spotlight_Posts\Featured\Index;
 
 /**
  * @covers \Spotlight_Posts\Index
@@ -24,10 +24,10 @@ class IndexTest extends TestCase {
 		$first  = self::factory()->post->create();
 		$second = self::factory()->post->create();
 
-		Index\add( $first );
-		Index\add( $second );
+		\Spotlight_Posts\index()->add( $first );
+		\Spotlight_Posts\index()->add( $second );
 
-		$this->assertSame( array( $second, $first ), Index\get_ids() );
+		$this->assertSame( array( $second, $first ), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -37,11 +37,11 @@ class IndexTest extends TestCase {
 		$a = self::factory()->post->create();
 		$b = self::factory()->post->create();
 
-		Index\add( $a );
-		Index\add( $b );
-		Index\add( $a );
+		\Spotlight_Posts\index()->add( $a );
+		\Spotlight_Posts\index()->add( $b );
+		\Spotlight_Posts\index()->add( $a );
 
-		$this->assertSame( array( $b, $a ), Index\get_ids() );
+		$this->assertSame( array( $b, $a ), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -52,10 +52,10 @@ class IndexTest extends TestCase {
 		$b = self::factory()->post->create();
 		$c = self::factory()->post->create();
 
-		Index\set_ids( array( $a, $b, $c ) );
-		Index\remove( $b );
+		\Spotlight_Posts\index()->set( array( $a, $b, $c ) );
+		\Spotlight_Posts\index()->remove( $b );
 
-		$this->assertSame( array( $a, $c ), Index\get_ids() );
+		$this->assertSame( array( $a, $c ), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -64,15 +64,15 @@ class IndexTest extends TestCase {
 	public function test_remove_unknown_post_is_a_noop(): void {
 		$a = self::factory()->post->create();
 
-		Index\set_ids( array( $a ) );
+		\Spotlight_Posts\index()->set( array( $a ) );
 
-		$version_before = \Spotlight_Posts\Query\get_cache_version();
-		Index\remove( 999999 );
+		$version_before = \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Support\Cache::class )->version();
+		\Spotlight_Posts\index()->remove( 999999 );
 
-		$this->assertSame( array( $a ), Index\get_ids() );
+		$this->assertSame( array( $a ), \Spotlight_Posts\index()->ids() );
 		$this->assertSame(
 			$version_before,
-			\Spotlight_Posts\Query\get_cache_version(),
+			\Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Support\Cache::class )->version(),
 			'A no-op removal must not invalidate the cache.'
 		);
 	}
@@ -81,18 +81,18 @@ class IndexTest extends TestCase {
 	 * The index is capped, because it is autoloaded into alloptions on every request.
 	 */
 	public function test_index_is_capped(): void {
-		Index\set_ids( range( 1, Index\MAX_IDS + 50 ) );
+		\Spotlight_Posts\index()->set( range( 1, Index::MAX_IDS + 50 ) );
 
-		$this->assertCount( Index\MAX_IDS, Index\get_ids() );
+		$this->assertCount( Index::MAX_IDS, \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
 	 * Duplicate IDs are collapsed on write.
 	 */
 	public function test_duplicates_are_collapsed(): void {
-		Index\set_ids( array( 5, 7, 5, 7, 9 ) );
+		\Spotlight_Posts\index()->set( array( 5, 7, 5, 7, 9 ) );
 
-		$this->assertSame( array( 5, 7, 9 ), Index\get_ids() );
+		$this->assertSame( array( 5, 7, 9 ), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -101,9 +101,9 @@ class IndexTest extends TestCase {
 	public function test_meta_write_adds_to_index(): void {
 		$post_id = self::factory()->post->create();
 
-		update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $post_id, Index::META_KEY, '1' );
 
-		$this->assertSame( array( $post_id ), Index\get_ids() );
+		$this->assertSame( array( $post_id ), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -112,11 +112,11 @@ class IndexTest extends TestCase {
 	public function test_meta_write_of_empty_value_removes_from_index(): void {
 		$post_id = $this->create_featured_post();
 
-		$this->assertSame( array( $post_id ), Index\get_ids() );
+		$this->assertSame( array( $post_id ), \Spotlight_Posts\index()->ids() );
 
-		update_post_meta( $post_id, Spotlight_Posts\META_KEY, '' );
+		update_post_meta( $post_id, Index::META_KEY, '' );
 
-		$this->assertSame( array(), Index\get_ids() );
+		$this->assertSame( array(), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -129,9 +129,9 @@ class IndexTest extends TestCase {
 	public function test_meta_delete_removes_from_index(): void {
 		$post_id = $this->create_featured_post();
 
-		delete_post_meta( $post_id, Spotlight_Posts\META_KEY );
+		delete_post_meta( $post_id, Index::META_KEY );
 
-		$this->assertSame( array(), Index\get_ids() );
+		$this->assertSame( array(), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -141,12 +141,12 @@ class IndexTest extends TestCase {
 	public function test_unrelated_meta_key_is_ignored(): void {
 		$post_id = self::factory()->post->create();
 
-		$version_before = \Spotlight_Posts\Query\get_cache_version();
+		$version_before = \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Support\Cache::class )->version();
 
 		update_post_meta( $post_id, '_something_else', 'value' );
 
-		$this->assertSame( array(), Index\get_ids() );
-		$this->assertSame( $version_before, \Spotlight_Posts\Query\get_cache_version() );
+		$this->assertSame( array(), \Spotlight_Posts\index()->ids() );
+		$this->assertSame( $version_before, \Spotlight_Posts\Plugin::instance()->get( \Spotlight_Posts\Support\Cache::class )->version() );
 	}
 
 	/**
@@ -157,7 +157,7 @@ class IndexTest extends TestCase {
 
 		wp_delete_post( $post_id, true );
 
-		$this->assertNotContains( $post_id, Index\get_ids() );
+		$this->assertNotContains( $post_id, \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -166,12 +166,12 @@ class IndexTest extends TestCase {
 	public function test_rebuild_repairs_a_corrupt_index(): void {
 		$post_id = $this->create_featured_post();
 
-		update_option( Index\OPTION, array( 999998, 999999 ) );
+		update_option( Index::OPTION, array( 999998, 999999 ) );
 
-		$rebuilt = Index\rebuild();
+		$rebuilt = \Spotlight_Posts\index()->rebuild();
 
 		$this->assertSame( array( $post_id ), $rebuilt );
-		$this->assertSame( array( $post_id ), Index\get_ids() );
+		$this->assertSame( array( $post_id ), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -181,9 +181,9 @@ class IndexTest extends TestCase {
 	public function test_absent_option_triggers_a_rebuild(): void {
 		$post_id = $this->create_featured_post();
 
-		delete_option( Index\OPTION );
+		delete_option( Index::OPTION );
 
-		$this->assertSame( array( $post_id ), Index\get_ids() );
+		$this->assertSame( array( $post_id ), \Spotlight_Posts\index()->ids() );
 	}
 
 	/**
@@ -193,12 +193,12 @@ class IndexTest extends TestCase {
 		$post_id = self::factory()->post->create( array( 'post_status' => 'publish' ) );
 
 		// Flagged in meta, but deliberately absent from the index.
-		add_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
-		update_option( Index\OPTION, array() );
+		add_post_meta( $post_id, Index::META_KEY, '1' );
+		update_option( Index::OPTION, array() );
 
 		$this->assertSame(
 			array(),
-			Index\get_ids(),
+			\Spotlight_Posts\index()->ids(),
 			'An empty index is a valid state and must be trusted, not rebuilt.'
 		);
 	}
@@ -209,9 +209,9 @@ class IndexTest extends TestCase {
 	public function test_drafts_are_indexed(): void {
 		$post_id = self::factory()->post->create( array( 'post_status' => 'draft' ) );
 
-		update_post_meta( $post_id, Spotlight_Posts\META_KEY, '1' );
-		Index\rebuild();
+		update_post_meta( $post_id, Index::META_KEY, '1' );
+		\Spotlight_Posts\index()->rebuild();
 
-		$this->assertContains( $post_id, Index\get_ids() );
+		$this->assertContains( $post_id, \Spotlight_Posts\index()->ids() );
 	}
 }

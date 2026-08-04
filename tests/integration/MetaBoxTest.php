@@ -11,7 +11,8 @@ namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
 use Spotlight_Posts\Meta_Box;
-use Spotlight_Posts\Schedule;
+use Spotlight_Posts\Featured\Schedule;
+use Spotlight_Posts\Featured\Index;
 
 /**
  * @covers \Spotlight_Posts\Meta_Box
@@ -69,7 +70,7 @@ class MetaBoxTest extends TestCase {
 	 * Is the post currently flagged?
 	 */
 	private function is_featured(): bool {
-		return '1' === get_post_meta( $this->post_id, Spotlight_Posts\META_KEY, true );
+		return '1' === get_post_meta( $this->post_id, Index::META_KEY, true );
 	}
 
 	/**
@@ -87,7 +88,7 @@ class MetaBoxTest extends TestCase {
 	 * Submitting with the box unticked clears the flag.
 	 */
 	public function test_unchecked_submission_clears_the_flag(): void {
-		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
 		$this->post_form( false );
 
@@ -139,7 +140,7 @@ class MetaBoxTest extends TestCase {
 	 * autosaves a post whose form fields are not present.
 	 */
 	public function test_autosave_is_ignored(): void {
-		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
 		$this->post_form( false );
 
@@ -223,38 +224,38 @@ class MetaBoxTest extends TestCase {
 		Meta_Box\save( $this->post_id );
 
 		$this->assertTrue( $this->is_featured() );
-		$this->assertGreaterThan( time(), Schedule\get_expiry( $this->post_id ) );
-		$this->assertNotFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $this->post_id ) ) );
+		$this->assertGreaterThan( time(), \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );
+		$this->assertNotFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $this->post_id ) ) );
 	}
 
 	/**
 	 * Saving without an expiry clears any previously stored one.
 	 */
 	public function test_save_without_an_expiry_clears_it(): void {
-		Schedule\set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
+		\Spotlight_Posts\schedule()->set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
 
 		$this->post_form( true );
 		$_POST[ Meta_Box\UNTIL_FIELD_NAME ] = '';
 
 		Meta_Box\save( $this->post_id );
 
-		$this->assertSame( 0, Schedule\get_expiry( $this->post_id ) );
-		$this->assertFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $this->post_id ) ) );
+		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );
+		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $this->post_id ) ) );
 	}
 
 	/**
 	 * Unfeaturing clears the expiry too, rather than leaving an orphaned event armed.
 	 */
 	public function test_unfeaturing_clears_the_expiry(): void {
-		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
-		Schedule\set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
+		update_post_meta( $this->post_id, Index::META_KEY, '1' );
+		\Spotlight_Posts\schedule()->set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
 
 		$this->post_form( false );
 
 		Meta_Box\save( $this->post_id );
 
 		$this->assertFalse( $this->is_featured() );
-		$this->assertSame( 0, Schedule\get_expiry( $this->post_id ) );
-		$this->assertFalse( wp_next_scheduled( Schedule\CRON_HOOK, array( $this->post_id ) ) );
+		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );
+		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $this->post_id ) ) );
 	}
 }

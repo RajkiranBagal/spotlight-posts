@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts\Block;
+use Spotlight_Posts\Featured\Index;
 
 /**
  * @covers \Spotlight_Posts\Block
@@ -141,7 +142,7 @@ class BlockTest extends TestCase {
 				'post_title'  => 'Bad <script>alert(1)</script>',
 			)
 		);
-		update_post_meta( $post_id, \Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $post_id, Index::META_KEY, '1' );
 
 		$this->assertStringContainsString(
 			'<script>',

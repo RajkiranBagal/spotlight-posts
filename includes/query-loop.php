@@ -46,8 +46,8 @@ const VARIATION = 'spotlight-posts/featured-query';
 function get_eligible_ids(): array {
 	$ids = array();
 
-	foreach ( Index\get_ids() as $post_id ) {
-		if ( ! Schedule\is_expired( $post_id ) ) {
+	foreach ( \Spotlight_Posts\index()->ids() as $post_id ) {
+		if ( ! \Spotlight_Posts\schedule()->is_expired( $post_id ) ) {
 			$ids[] = $post_id;
 		}
 	}

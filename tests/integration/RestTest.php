@@ -10,8 +10,9 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
-use Spotlight_Posts\Query;
+use Spotlight_Posts\Featured\Repository;
 use Spotlight_Posts\REST;
+use Spotlight_Posts\Featured\Index;
 
 /**
  * @covers \Spotlight_Posts\REST
@@ -82,10 +83,10 @@ class RestTest extends TestCase {
 		$published = $this->create_featured_post( 'Published' );
 
 		$draft = self::factory()->post->create( array( 'post_status' => 'draft' ) );
-		update_post_meta( $draft, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $draft, Index::META_KEY, '1' );
 
 		$private = self::factory()->post->create( array( 'post_status' => 'private' ) );
-		update_post_meta( $private, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $private, Index::META_KEY, '1' );
 
 		$ids = wp_list_pluck( $this->get()->get_data(), 'id' );
 
@@ -139,7 +140,7 @@ class RestTest extends TestCase {
 	public function data_invalid_counts(): array {
 		return array(
 			'zero'            => array( 0 ),
-			'above ceiling'   => array( Query\MAX_POSTS + 1 ),
+			'above ceiling'   => array( Repository::MAX_POSTS + 1 ),
 			'far too large'   => array( 99999 ),
 			'negative'        => array( -3 ),
 			'non-numeric'     => array( 'abc' ),
@@ -152,7 +153,7 @@ class RestTest extends TestCase {
 	public function test_boundaries_are_accepted(): void {
 		$this->create_featured_post();
 
-		$this->assertSame( 200, $this->get( array( 'count' => Query\MIN_POSTS ) )->get_status() );
-		$this->assertSame( 200, $this->get( array( 'count' => Query\MAX_POSTS ) )->get_status() );
+		$this->assertSame( 200, $this->get( array( 'count' => Repository::MIN_POSTS ) )->get_status() );
+		$this->assertSame( 200, $this->get( array( 'count' => Repository::MAX_POSTS ) )->get_status() );
 	}
 }

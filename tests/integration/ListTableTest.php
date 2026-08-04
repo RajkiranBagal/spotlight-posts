@@ -11,7 +11,7 @@ namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
 use Spotlight_Posts\Admin\List_Table;
-use Spotlight_Posts\Index;
+use Spotlight_Posts\Featured\Index;
 
 /**
  * @covers \Spotlight_Posts\Admin\List_Table
@@ -57,7 +57,7 @@ class ListTableTest extends TestCase {
 	 * Is the post under test flagged?
 	 */
 	private function is_featured(): bool {
-		return '1' === get_post_meta( $this->post_id, Spotlight_Posts\META_KEY, true );
+		return '1' === get_post_meta( $this->post_id, Index::META_KEY, true );
 	}
 
 	/**
@@ -122,7 +122,7 @@ class ListTableTest extends TestCase {
 	 * The pressed state reflects the stored flag.
 	 */
 	public function test_toggle_reflects_featured_state(): void {
-		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
 		ob_start();
 		List_Table\render_column( List_Table\COLUMN_ID, $this->post_id );
@@ -175,14 +175,14 @@ class ListTableTest extends TestCase {
 		List_Table\handle_bulk_action( 'http://example.org/', List_Table\BULK_FEATURE, array( $this->post_id, $other ) );
 
 		$this->assertTrue( $this->is_featured() );
-		$this->assertSame( '1', get_post_meta( $other, Spotlight_Posts\META_KEY, true ) );
+		$this->assertSame( '1', get_post_meta( $other, Index::META_KEY, true ) );
 	}
 
 	/**
 	 * Bulk unfeaturing clears the flag.
 	 */
 	public function test_bulk_unfeature_clears_the_selection(): void {
-		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
 		List_Table\handle_bulk_action( 'http://example.org/', List_Table\BULK_UNFEATURE, array( $this->post_id ) );
 
@@ -219,7 +219,7 @@ class ListTableTest extends TestCase {
 	 * Filtering to featured posts reads the index rather than querying meta.
 	 */
 	public function test_filter_narrows_to_indexed_posts(): void {
-		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
 		$_GET[ List_Table\FILTER_PARAM ] = 'featured';
 
@@ -227,14 +227,14 @@ class ListTableTest extends TestCase {
 
 		List_Table\apply_filter( $query );
 
-		$this->assertSame( Index\get_ids(), $query->get( 'post__in' ) );
+		$this->assertSame( \Spotlight_Posts\index()->ids(), $query->get( 'post__in' ) );
 	}
 
 	/**
 	 * The inverse filter excludes the indexed posts.
 	 */
 	public function test_not_featured_filter_excludes_indexed_posts(): void {
-		update_post_meta( $this->post_id, Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
 		$_GET[ List_Table\FILTER_PARAM ] = 'not_featured';
 
@@ -242,7 +242,7 @@ class ListTableTest extends TestCase {
 
 		List_Table\apply_filter( $query );
 
-		$this->assertSame( Index\get_ids(), $query->get( 'post__not_in' ) );
+		$this->assertSame( \Spotlight_Posts\index()->ids(), $query->get( 'post__not_in' ) );
 	}
 
 	/**

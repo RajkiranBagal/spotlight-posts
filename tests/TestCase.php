@@ -9,7 +9,7 @@ declare( strict_types = 1 );
 
 namespace Spotlight_Posts\Tests;
 
-use Spotlight_Posts\Index;
+use Spotlight_Posts\Featured\Index;
 
 /**
  * Resets the plugin's persistent state between tests.
@@ -29,7 +29,7 @@ abstract class TestCase extends \WP_UnitTestCase {
 
 		// Written directly rather than through set_ids(), so the starting state is a
 		// known-empty index rather than one rebuilt from whatever meta exists.
-		update_option( Index\OPTION, array() );
+		update_option( Index::OPTION, array() );
 	}
 
 	/**
@@ -46,7 +46,7 @@ abstract class TestCase extends \WP_UnitTestCase {
 			)
 		);
 
-		update_post_meta( $post_id, \Spotlight_Posts\META_KEY, '1' );
+		update_post_meta( $post_id, Index::META_KEY, '1' );
 
 		return $post_id;
 	}
