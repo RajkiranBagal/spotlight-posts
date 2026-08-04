@@ -10,7 +10,7 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
-use Spotlight_Posts\Admin\Order_Screen;
+
 use Spotlight_Posts\Featured\Index;
 
 /**
@@ -23,8 +23,6 @@ class OrderScreenTest extends TestCase {
 	 */
 	public function set_up(): void {
 		parent::set_up();
-
-		require_once dirname( __DIR__, 2 ) . '/includes/admin/order-screen.php';
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
@@ -46,7 +44,7 @@ class OrderScreenTest extends TestCase {
 	 * Reordering defaults to an editor-level capability.
 	 */
 	public function test_default_capability(): void {
-		$this->assertSame( 'edit_others_posts', Order_Screen\get_capability() );
+		$this->assertSame( 'edit_others_posts', $this->screen()->capability() );
 	}
 
 	/**
@@ -60,16 +58,16 @@ class OrderScreenTest extends TestCase {
 			}
 		);
 
-		$this->assertSame( 'manage_options', Order_Screen\get_capability() );
+		$this->assertSame( 'manage_options', $this->screen()->capability() );
 	}
 
 	/**
 	 * An editor can curate; a contributor cannot.
 	 */
 	public function test_capability_maps_to_the_expected_roles(): void {
-		$this->assertTrue( user_can( self::factory()->user->create( array( 'role' => 'editor' ) ), Order_Screen\get_capability() ) );
-		$this->assertFalse( user_can( self::factory()->user->create( array( 'role' => 'contributor' ) ), Order_Screen\get_capability() ) );
-		$this->assertFalse( user_can( self::factory()->user->create( array( 'role' => 'subscriber' ) ), Order_Screen\get_capability() ) );
+		$this->assertTrue( user_can( self::factory()->user->create( array( 'role' => 'editor' ) ), $this->screen()->capability() ) );
+		$this->assertFalse( user_can( self::factory()->user->create( array( 'role' => 'contributor' ) ), $this->screen()->capability() ) );
+		$this->assertFalse( user_can( self::factory()->user->create( array( 'role' => 'subscriber' ) ), $this->screen()->capability() ) );
 	}
 
 	/**
@@ -82,7 +80,7 @@ class OrderScreenTest extends TestCase {
 		\Spotlight_Posts\index()->set( array( $b, $a ) );
 
 		ob_start();
-		Order_Screen\render_page();
+		$this->screen()->render_page();
 		$html = (string) ob_get_clean();
 
 		$this->assertLessThan(
@@ -98,7 +96,7 @@ class OrderScreenTest extends TestCase {
 	 */
 	public function test_page_renders_an_empty_state(): void {
 		ob_start();
-		Order_Screen\render_page();
+		$this->screen()->render_page();
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( 'No posts are featured yet', $html );
@@ -112,7 +110,7 @@ class OrderScreenTest extends TestCase {
 		$this->create_featured_post( 'Alpha' );
 
 		ob_start();
-		Order_Screen\render_page();
+		$this->screen()->render_page();
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( 'data-direction="up"', $html );
@@ -227,6 +225,6 @@ class OrderScreenTest extends TestCase {
 	 * @return int[] Resulting index.
 	 */
 	private function save_order( array $submitted ): array {
-		return Order_Screen\apply_order( $submitted );
+		return $this->screen()->apply_order( $submitted );
 	}
 }
