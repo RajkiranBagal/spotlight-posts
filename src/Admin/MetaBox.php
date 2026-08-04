@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Admin;
 
 use Spotlight_Posts\Featured\Index;
+use Spotlight_Posts\Featured\Meta;
 use Spotlight_Posts\Featured\Schedule;
 use Spotlight_Posts\Registrable;
 use Spotlight_Posts\Support\PostTypes;
@@ -41,6 +42,11 @@ final class MetaBox implements Registrable {
 	 * Name of the "featured until" input.
 	 */
 	public const UNTIL_FIELD_NAME = 'spotlight_posts_until';
+
+	/**
+	 * Name of the editorial label input.
+	 */
+	public const LABEL_FIELD_NAME = 'spotlight_posts_label';
 
 	/**
 	 * Expiry scheduler.
@@ -78,7 +84,6 @@ final class MetaBox implements Registrable {
 	 * Register meta, the box itself and the save handler.
 	 */
 	public function register(): void {
-		add_action( 'init', array( $this, 'register_meta' ) );
 		add_action( 'init', array( $this, 'register_per_type' ), 20 );
 	}
 
@@ -90,53 +95,6 @@ final class MetaBox implements Registrable {
 			add_action( "add_meta_boxes_{$post_type}", array( $this, 'add' ) );
 			add_action( "save_post_{$post_type}", array( $this, 'save' ) );
 		}
-	}
-
-	/**
-	 * Register the featured flag as post meta on every supported type.
-	 *
-	 * Registering rather than writing raw meta gives a sanitize_callback on every write
-	 * path and an auth_callback that gates the protected key.
-	 */
-	public function register_meta(): void {
-		foreach ( $this->post_types->all() as $post_type ) {
-			register_post_meta(
-				$post_type,
-				Index::META_KEY,
-				array(
-					'type'              => 'string',
-					'single'            => true,
-					'default'           => '',
-					// Protected meta stays out of the REST post object; the plugin exposes
-					// its own read-only endpoint instead.
-					'show_in_rest'      => false,
-					'sanitize_callback' => array( $this, 'sanitize_meta' ),
-					'auth_callback'     => array( $this, 'auth_meta' ),
-				)
-			);
-		}
-	}
-
-	/**
-	 * Normalise the stored value to either '1' or an empty string.
-	 *
-	 * @param mixed $value Incoming meta value.
-	 * @return string Sanitized meta value.
-	 */
-	public function sanitize_meta( $value ): string {
-		return '1' === (string) $value ? '1' : '';
-	}
-
-	/**
-	 * Authorise writes to the protected featured meta key.
-	 *
-	 * @param bool  $allowed   Whether the user can add the meta. Unused.
-	 * @param mixed $meta_key  Meta key being written. Unused.
-	 * @param mixed $object_id ID of the post being written to.
-	 * @return bool Whether the current user may write this meta.
-	 */
-	public function auth_meta( $allowed, $meta_key, $object_id ): bool {
-		return current_user_can( 'edit_post', (int) $object_id );
 	}
 
 	/**
@@ -167,6 +125,8 @@ final class MetaBox implements Registrable {
 		// converted into the site's timezone for display and back again on save.
 		$until_value = $expiry > 0 ? wp_date( 'Y-m-d\TH:i', $expiry ) : '';
 
+		$label = (string) get_post_meta( $post->ID, Meta::LABEL_KEY, true );
+
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
 		?>
 		<p>
@@ -195,6 +155,23 @@ final class MetaBox implements Registrable {
 		</p>
 		<p class="description">
 			<?php esc_html_e( 'Leave blank to keep the post featured until it is removed. Times are in the site timezone.', 'spotlight-posts' ); ?>
+		</p>
+		<p>
+			<label for="<?php echo esc_attr( self::LABEL_FIELD_NAME ); ?>">
+				<?php esc_html_e( 'Label', 'spotlight-posts' ); ?>
+			</label>
+			<input
+				type="text"
+				id="<?php echo esc_attr( self::LABEL_FIELD_NAME ); ?>"
+				name="<?php echo esc_attr( self::LABEL_FIELD_NAME ); ?>"
+				value="<?php echo esc_attr( $label ); ?>"
+				maxlength="<?php echo esc_attr( (string) Meta::LABEL_MAX_LENGTH ); ?>"
+				class="widefat"
+				placeholder="<?php esc_attr_e( 'Editor&#8217;s pick', 'spotlight-posts' ); ?>"
+			/>
+		</p>
+		<p class="description">
+			<?php esc_html_e( 'Optional badge shown above the title wherever this post is featured.', 'spotlight-posts' ); ?>
 		</p>
 		<p class="description">
 			<?php esc_html_e( 'Featured posts appear in the Featured Posts block and the public REST endpoint.', 'spotlight-posts' ); ?>
@@ -261,6 +238,17 @@ final class MetaBox implements Registrable {
 			$post_id,
 			$this->parse_until( $this->request->post( self::UNTIL_FIELD_NAME ) )
 		);
+
+		// Sanitizing and truncating happen in the registered sanitize_callback, so this
+		// deliberately hands over the raw submitted value rather than pre-trimming it in
+		// a second place that could drift.
+		$label = $this->request->post( self::LABEL_FIELD_NAME );
+
+		if ( '' === $label ) {
+			delete_post_meta( $post_id, Meta::LABEL_KEY );
+		} else {
+			update_post_meta( $post_id, Meta::LABEL_KEY, $label );
+		}
 	}
 
 	/**

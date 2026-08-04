@@ -223,7 +223,7 @@ class PostTypesTest extends TestCase {
 	public function test_meta_is_registered_for_each_supported_type(): void {
 		$this->support_guides();
 
-		$this->metaBox()->register_meta();
+		$this->meta()->register_meta();
 
 		$registered = get_registered_meta_keys( 'post', 'guide' );
 

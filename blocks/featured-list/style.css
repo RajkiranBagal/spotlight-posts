@@ -1,0 +1,25 @@
+/**
+ * Front-end styles for the Featured Posts block.
+ *
+ * Loaded through block.json's `style` handle, so it is enqueued only on pages that
+ * actually render the block rather than site-wide.
+ */
+
+/*
+ * An outlined pill rather than a filled one. A filled badge has to pick a background
+ * colour, which then has to contrast with whatever the theme sets behind it -- an
+ * outline inherits the surrounding text colour and is legible on any background.
+ */
+.wp-block-spotlight-posts-featured-list__label {
+	display: inline-block;
+	margin-block-end: 0.25em;
+	padding: 0.1em 0.6em;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+	font-size: 0.72em;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	line-height: 1.7;
+	text-transform: uppercase;
+	opacity: 0.75;
+}

@@ -164,10 +164,10 @@ class MetaBoxTest extends TestCase {
 	 * The registered sanitize callback only ever stores '1' or an empty string.
 	 */
 	public function test_sanitize_callback_normalises_values(): void {
-		$this->assertSame( '1', $this->metaBox()->sanitize_meta( '1' ) );
-		$this->assertSame( '', $this->metaBox()->sanitize_meta( 'yes' ) );
-		$this->assertSame( '', $this->metaBox()->sanitize_meta( '<script>alert(1)</script>' ) );
-		$this->assertSame( '', $this->metaBox()->sanitize_meta( '' ) );
+		$this->assertSame( '1', $this->meta()->sanitize_featured( '1' ) );
+		$this->assertSame( '', $this->meta()->sanitize_featured( 'yes' ) );
+		$this->assertSame( '', $this->meta()->sanitize_featured( '<script>alert(1)</script>' ) );
+		$this->assertSame( '', $this->meta()->sanitize_featured( '' ) );
 	}
 
 	/**

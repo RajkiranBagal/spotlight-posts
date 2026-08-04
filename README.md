@@ -41,6 +41,9 @@ Editors can flag a post four ways, because different jobs want different ones:
 A **Featured / Not featured** filter sits above the list table, and the column appears in
 Screen Options so anyone who does not curate can hide it.
 
+Each post can carry a short **label** — "Editor's pick", "Trending" — rendered as a badge
+above the title wherever it is featured.
+
 A post can also be featured **until a given date and time**, set alongside the checkbox in
 the editor. See [scheduled expiry](#scheduled-expiry-is-a-caching-problem) for how that
 interacts with caching.
@@ -59,7 +62,8 @@ Flagged posts appear in three places:
 
 - a **Featured Posts** variation of core's Query Loop — full card layouts with featured
   images, titles, excerpts and dates, styled by your theme,
-- the **Featured Posts** block (dynamic, server-rendered, configurable heading and count), and
+- the **Featured Posts** block (dynamic, server-rendered, configurable heading, count and
+  an optional top-up with recent posts), and
 - `GET /wp-json/spotlight/v1/posts?count=5`
 
 All three read the same index and apply the same expiry rule, so they cannot disagree
@@ -118,7 +122,7 @@ bin/install-wp-tests.sh wordpress_test wordpress wordpress 127.0.0.1:50400 6.7 t
 WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test
 ```
 
-127 tests cover the save guards, the count clamp, REST validation, cache invalidation,
+150 tests cover the save guards, the count clamp, REST validation, cache invalidation,
 index ordering, the draft round-trip, the list-table controls, the ordering screen, scheduled expiry, the Query Loop variation, multi-post-type support and the block's heading levels. They have been
 mutation-checked: removing the capability check, the meta-key filter or the count clamp
 each turns the suite red.
@@ -327,6 +331,18 @@ namespace in query context : (absent)
 The variation therefore sets `namespace` in **both** places — top level for core's
 variation matching and `isActive`, and inside `query` where the server can actually read
 it. Both are load-bearing.
+
+### Registration is a data concern, the meta box is a UI one
+
+`Featured\Meta` declares both post meta keys and is constructed on every request. The meta
+box that edits them is admin-only.
+
+They were the same class until labels were added, and that was a real bug rather than an
+aesthetic one: the meta box only exists when `is_admin()` is true, so on a WP-CLI or REST
+request the featured flag had **no `sanitize_callback` and no `auth_callback` at all**.
+Writing junk to it stored the junk verbatim. The expiry key was unaffected, because its
+registration already lived on an always-constructed service — which is what made the
+inconsistency easy to miss.
 
 ### Deleting the plugin removes its data, and only its data
 

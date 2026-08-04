@@ -19,6 +19,10 @@ import { __ } from '@wordpress/i18n';
 
 import metadata from './block.json';
 
+// Imported so wp-scripts extracts it to build/featured-list/style-index.css, which
+// block.json references as the front-end style handle.
+import './style.css';
+
 registerBlockType( metadata.name, {
 	edit: ( { attributes, setAttributes } ) => {
 		const blockProps = useBlockProps();
