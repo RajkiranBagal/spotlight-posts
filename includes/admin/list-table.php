@@ -263,7 +263,7 @@ function bulk_action_notice(): void {
  * @param string $post_type Post type being edited.
  */
 function quick_edit_field( string $column, string $post_type ): void {
-	if ( COLUMN_ID !== $column || 'post' !== $post_type ) {
+	if ( COLUMN_ID !== $column || ! in_array( $post_type, Spotlight_Posts\supported_post_types(), true ) ) {
 		return;
 	}
 
@@ -286,7 +286,7 @@ function quick_edit_field( string $column, string $post_type ): void {
  * @param string $post_type Post type being listed.
  */
 function filter_dropdown( string $post_type ): void {
-	if ( 'post' !== $post_type ) {
+	if ( ! in_array( $post_type, Spotlight_Posts\supported_post_types(), true ) ) {
 		return;
 	}
 
@@ -325,7 +325,7 @@ function apply_filter( \WP_Query $query ): void {
 		return;
 	}
 
-	if ( 'post' !== $query->get( 'post_type' ) ) {
+	if ( ! in_array( (string) $query->get( 'post_type' ), Spotlight_Posts\supported_post_types(), true ) ) {
 		return;
 	}
 
@@ -362,7 +362,7 @@ function enqueue_assets( string $hook ): void {
 
 	$screen = get_current_screen();
 
-	if ( ! $screen instanceof \WP_Screen || 'post' !== $screen->post_type ) {
+	if ( ! $screen instanceof \WP_Screen || ! in_array( $screen->post_type, Spotlight_Posts\supported_post_types(), true ) ) {
 		return;
 	}
 

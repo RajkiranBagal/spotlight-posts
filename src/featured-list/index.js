@@ -17,7 +17,7 @@ import metadata from './block.json';
 registerBlockType( metadata.name, {
 	edit: ( { attributes, setAttributes } ) => {
 		const blockProps = useBlockProps();
-		const { heading, numberOfPosts } = attributes;
+		const { heading, numberOfPosts, headingLevel } = attributes;
 
 		return (
 			<>
@@ -49,6 +49,26 @@ registerBlockType( metadata.name, {
 							}
 							min={ 1 }
 							max={ 10 }
+						/>
+						{ /*
+						 * A fixed h2 breaks the document outline wherever this block is
+						 * not actually the second level on the page — which is how
+						 * screen reader users navigate. h1 is deliberately not offered:
+						 * it belongs to the page title.
+						 */ }
+						<RangeControl
+							__nextHasNoMarginBottom
+							label={ __( 'Heading level', 'spotlight-posts' ) }
+							help={ __(
+								'Match the surrounding page so the heading order stays correct.',
+								'spotlight-posts'
+							) }
+							value={ headingLevel }
+							onChange={ ( value ) =>
+								setAttributes( { headingLevel: value } )
+							}
+							min={ 2 }
+							max={ 6 }
 						/>
 					</PanelBody>
 				</InspectorControls>

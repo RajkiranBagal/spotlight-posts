@@ -51,6 +51,10 @@ Curation is gated on `edit_others_posts` rather than post authorship, filterable
 `spotlight_posts_manage_capability` — deciding what the homepage promotes and being
 able to write posts are different jobs.
 
+Out of the box this applies to posts. Any post type can opt in through the
+`spotlight_posts_post_types` filter, and they share one ordered list rather than being
+grouped by type.
+
 Flagged posts appear in three places:
 
 - a **Featured Posts** variation of core's Query Loop — full card layouts with featured
@@ -109,8 +113,8 @@ bin/install-wp-tests.sh wordpress_test wordpress wordpress 127.0.0.1:50400 6.7 t
 WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test
 ```
 
-106 tests cover the save guards, the count clamp, REST validation, cache invalidation,
-index ordering, the draft round-trip, the list-table controls, the ordering screen, scheduled expiry and the Query Loop variation. They have been
+127 tests cover the save guards, the count clamp, REST validation, cache invalidation,
+index ordering, the draft round-trip, the list-table controls, the ordering screen, scheduled expiry, the Query Loop variation, multi-post-type support and the block's heading levels. They have been
 mutation-checked: removing the capability check, the meta-key filter or the count clamp
 each turns the suite red.
 
@@ -285,6 +289,22 @@ The variation therefore sets `namespace` in **both** places — top level for co
 variation matching and `isActive`, and inside `query` where the server can actually read
 it. Both are load-bearing.
 
+### Deleting the plugin removes its data, and only its data
+
+`uninstall.php` clears both meta keys, the index option and any scheduled expiry events.
+Post content is never touched: a site that deletes the plugin keeps its posts and simply
+stops treating any of them as featured.
+
+Two details are load-bearing. The option is deleted **after** the meta, because
+`delete_post_meta_by_key()` fires `deleted_post_meta` for every row — and if the plugin's
+hooks are still attached, the index sync sees a missing option and rebuilds it. And
+`wp_unschedule_hook()` is used rather than `wp_clear_scheduled_hook()`, because expiry
+events carry per-post arguments that a bare hook-name clear would not match.
+
+The object cache group is dropped only where the backend supports `flush_group`,
+deliberately *not* falling back to `wp_cache_flush()` — that would evict every other
+plugin's cached data on the way out.
+
 ### Scheduled expiry is a caching problem
 
 "Feature this until Friday" sounds like a UI feature. It is really a question about how
@@ -372,7 +392,8 @@ humans do not review. This repo is the source side of that split.
 
 ```
 spotlight-posts/
-├── spotlight-posts.php   Plugin header, constants, hook registration
+├── spotlight-posts.php   Plugin header, constants, supported post types, hooks
+├── uninstall.php         Removes the plugin's data on delete
 ├── includes/
 │   ├── schedule.php         Expiry meta, cron scheduling, read-time filter
 │   ├── index.php            Ordered ID index — the reason reads hit the primary key

@@ -142,7 +142,7 @@ function rebuild(): array {
 	 */
 	$query = new \WP_Query(
 		array(
-			'post_type'              => 'post',
+			'post_type'              => Spotlight_Posts\supported_post_types(),
 			'post_status'            => array( 'publish', 'future', 'draft', 'pending', 'private' ),
 			'posts_per_page'         => MAX_IDS,
 			'fields'                 => 'ids',

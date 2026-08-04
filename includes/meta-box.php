@@ -41,20 +41,22 @@ const UNTIL_FIELD_NAME = 'spotlight_posts_until';
  * every write path and an auth_callback that gates the protected key.
  */
 function register_meta(): void {
-	register_post_meta(
-		'post',
-		Spotlight_Posts\META_KEY,
-		array(
-			'type'              => 'string',
-			'single'            => true,
-			'default'           => '',
-			// Protected meta stays out of the REST post object; the plugin
-			// exposes its own read-only endpoint instead.
-			'show_in_rest'      => false,
-			'sanitize_callback' => __NAMESPACE__ . '\\sanitize_meta',
-			'auth_callback'     => __NAMESPACE__ . '\\auth_meta',
-		)
-	);
+	foreach ( Spotlight_Posts\supported_post_types() as $post_type ) {
+		register_post_meta(
+			$post_type,
+			Spotlight_Posts\META_KEY,
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'default'           => '',
+				// Protected meta stays out of the REST post object; the plugin
+				// exposes its own read-only endpoint instead.
+				'show_in_rest'      => false,
+				'sanitize_callback' => __NAMESPACE__ . '\\sanitize_meta',
+				'auth_callback'     => __NAMESPACE__ . '\\auth_meta',
+			)
+		);
+	}
 }
 
 /**
@@ -87,7 +89,7 @@ function add_meta_box(): void {
 		'spotlight-posts',
 		__( 'Featured', 'spotlight-posts' ),
 		__NAMESPACE__ . '\\render',
-		'post',
+		Spotlight_Posts\supported_post_types(),
 		'side',
 		'default'
 	);

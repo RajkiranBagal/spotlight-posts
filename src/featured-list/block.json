@@ -6,12 +6,19 @@
 	"category": "widgets",
 	"icon": "star-filled",
 	"description": "Displays the posts editors have flagged as featured.",
-	"keywords": [ "featured", "posts", "spotlight" ],
+	"keywords": [
+		"featured",
+		"posts",
+		"spotlight"
+	],
 	"version": "1.0.0",
 	"textdomain": "spotlight-posts",
 	"supports": {
 		"html": false,
-		"align": [ "wide", "full" ]
+		"align": [
+			"wide",
+			"full"
+		]
 	},
 	"attributes": {
 		"heading": {
@@ -21,6 +28,10 @@
 		"numberOfPosts": {
 			"type": "number",
 			"default": 5
+		},
+		"headingLevel": {
+			"type": "number",
+			"default": 2
 		}
 	},
 	"editorScript": "file:./index.js"
