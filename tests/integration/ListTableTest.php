@@ -10,8 +10,13 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
-use Spotlight_Posts\Admin\List_Table;
+
 use Spotlight_Posts\Featured\Index;
+use Spotlight_Posts\Admin\ListTable\Column;
+use Spotlight_Posts\Admin\ListTable\BulkActions;
+use Spotlight_Posts\Admin\ListTable\QuickEdit;
+use Spotlight_Posts\Admin\ListTable\Filter;
+use Spotlight_Posts\Admin\MetaBox;
 
 /**
  * @covers \Spotlight_Posts\Admin\List_Table
@@ -33,8 +38,6 @@ class ListTableTest extends TestCase {
 
 		// The module is only required when is_admin() is true, which it is not under
 		// PHPUnit. Loading it directly keeps the test honest about what it exercises.
-		require_once dirname( __DIR__, 2 ) . '/includes/admin/list-table.php';
-
 		$this->post_id = self::factory()->post->create( array( 'post_status' => 'publish' ) );
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
@@ -84,7 +87,7 @@ class ListTableTest extends TestCase {
 	 * The column is inserted before the date column.
 	 */
 	public function test_column_is_added_before_date(): void {
-		$columns = List_Table\add_column(
+		$columns = $this->column()->add(
 			array(
 				'title' => 'Title',
 				'date'  => 'Date',
@@ -92,7 +95,7 @@ class ListTableTest extends TestCase {
 		);
 
 		$this->assertSame(
-			array( 'title', List_Table\COLUMN_ID, 'date' ),
+			array( 'title', Column::COLUMN_ID, 'date' ),
 			array_keys( $columns )
 		);
 	}
@@ -101,9 +104,9 @@ class ListTableTest extends TestCase {
 	 * A screen with no date column still gets the column.
 	 */
 	public function test_column_is_appended_when_there_is_no_date_column(): void {
-		$columns = List_Table\add_column( array( 'title' => 'Title' ) );
+		$columns = $this->column()->add( array( 'title' => 'Title' ) );
 
-		$this->assertArrayHasKey( List_Table\COLUMN_ID, $columns );
+		$this->assertArrayHasKey( Column::COLUMN_ID, $columns );
 	}
 
 	/**
@@ -111,7 +114,7 @@ class ListTableTest extends TestCase {
 	 */
 	public function test_column_renders_a_toggle_for_authorised_users(): void {
 		ob_start();
-		List_Table\render_column( List_Table\COLUMN_ID, $this->post_id );
+		$this->column()->render( Column::COLUMN_ID, $this->post_id );
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( 'spotlight-toggle', $html );
@@ -125,7 +128,7 @@ class ListTableTest extends TestCase {
 		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
 		ob_start();
-		List_Table\render_column( List_Table\COLUMN_ID, $this->post_id );
+		$this->column()->render( Column::COLUMN_ID, $this->post_id );
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( 'aria-pressed="true"', $html );
@@ -139,7 +142,7 @@ class ListTableTest extends TestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
 
 		ob_start();
-		List_Table\render_column( List_Table\COLUMN_ID, $this->post_id );
+		$this->column()->render( Column::COLUMN_ID, $this->post_id );
 		$html = (string) ob_get_clean();
 
 		$this->assertStringNotContainsString( '<button', $html );
@@ -151,7 +154,7 @@ class ListTableTest extends TestCase {
 	 */
 	public function test_other_columns_are_untouched(): void {
 		ob_start();
-		List_Table\render_column( 'title', $this->post_id );
+		$this->column()->render( 'title', $this->post_id );
 
 		$this->assertSame( '', (string) ob_get_clean() );
 	}
@@ -160,10 +163,10 @@ class ListTableTest extends TestCase {
 	 * Both bulk actions are offered.
 	 */
 	public function test_bulk_actions_are_registered(): void {
-		$actions = List_Table\register_bulk_actions( array() );
+		$actions = $this->bulk()->add( array() );
 
-		$this->assertArrayHasKey( List_Table\BULK_FEATURE, $actions );
-		$this->assertArrayHasKey( List_Table\BULK_UNFEATURE, $actions );
+		$this->assertArrayHasKey( BulkActions::FEATURE, $actions );
+		$this->assertArrayHasKey( BulkActions::UNFEATURE, $actions );
 	}
 
 	/**
@@ -172,7 +175,7 @@ class ListTableTest extends TestCase {
 	public function test_bulk_feature_flags_the_selection(): void {
 		$other = self::factory()->post->create( array( 'post_status' => 'publish' ) );
 
-		List_Table\handle_bulk_action( 'http://example.org/', List_Table\BULK_FEATURE, array( $this->post_id, $other ) );
+		$this->bulk()->handle( 'http://example.org/', BulkActions::FEATURE, array( $this->post_id, $other ) );
 
 		$this->assertTrue( $this->is_featured() );
 		$this->assertSame( '1', get_post_meta( $other, Index::META_KEY, true ) );
@@ -184,7 +187,7 @@ class ListTableTest extends TestCase {
 	public function test_bulk_unfeature_clears_the_selection(): void {
 		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
-		List_Table\handle_bulk_action( 'http://example.org/', List_Table\BULK_UNFEATURE, array( $this->post_id ) );
+		$this->bulk()->handle( 'http://example.org/', BulkActions::UNFEATURE, array( $this->post_id ) );
 
 		$this->assertFalse( $this->is_featured() );
 	}
@@ -198,7 +201,7 @@ class ListTableTest extends TestCase {
 	public function test_bulk_action_skips_posts_the_user_cannot_edit(): void {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
 
-		$redirect = List_Table\handle_bulk_action( 'http://example.org/', List_Table\BULK_FEATURE, array( $this->post_id ) );
+		$redirect = $this->bulk()->handle( 'http://example.org/', BulkActions::FEATURE, array( $this->post_id ) );
 
 		$this->assertFalse( $this->is_featured() );
 		$this->assertStringContainsString( 'spotlight_denied=1', $redirect );
@@ -209,7 +212,7 @@ class ListTableTest extends TestCase {
 	 * Unrelated bulk actions pass straight through.
 	 */
 	public function test_unrelated_bulk_action_is_ignored(): void {
-		$redirect = List_Table\handle_bulk_action( 'http://example.org/', 'trash', array( $this->post_id ) );
+		$redirect = $this->bulk()->handle( 'http://example.org/', 'trash', array( $this->post_id ) );
 
 		$this->assertSame( 'http://example.org/', $redirect );
 		$this->assertFalse( $this->is_featured() );
@@ -221,11 +224,11 @@ class ListTableTest extends TestCase {
 	public function test_filter_narrows_to_indexed_posts(): void {
 		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
-		$_GET[ List_Table\FILTER_PARAM ] = 'featured';
+		$_GET[ Filter::PARAM ] = 'featured';
 
 		$query = $this->main_admin_query();
 
-		List_Table\apply_filter( $query );
+		$this->filter()->apply( $query );
 
 		$this->assertSame( \Spotlight_Posts\index()->ids(), $query->get( 'post__in' ) );
 	}
@@ -236,11 +239,11 @@ class ListTableTest extends TestCase {
 	public function test_not_featured_filter_excludes_indexed_posts(): void {
 		update_post_meta( $this->post_id, Index::META_KEY, '1' );
 
-		$_GET[ List_Table\FILTER_PARAM ] = 'not_featured';
+		$_GET[ Filter::PARAM ] = 'not_featured';
 
 		$query = $this->main_admin_query();
 
-		List_Table\apply_filter( $query );
+		$this->filter()->apply( $query );
 
 		$this->assertSame( \Spotlight_Posts\index()->ids(), $query->get( 'post__not_in' ) );
 	}
@@ -252,11 +255,11 @@ class ListTableTest extends TestCase {
 	 * widen to every post -- the opposite of what was asked for.
 	 */
 	public function test_featured_filter_with_an_empty_index_matches_nothing(): void {
-		$_GET[ List_Table\FILTER_PARAM ] = 'featured';
+		$_GET[ Filter::PARAM ] = 'featured';
 
 		$query = $this->main_admin_query();
 
-		List_Table\apply_filter( $query );
+		$this->filter()->apply( $query );
 
 		$this->assertSame( array( 0 ), $query->get( 'post__in' ) );
 	}
@@ -267,7 +270,7 @@ class ListTableTest extends TestCase {
 	public function test_absent_filter_leaves_the_query_alone(): void {
 		$query = $this->main_admin_query();
 
-		List_Table\apply_filter( $query );
+		$this->filter()->apply( $query );
 
 		$this->assertSame( '', $query->get( 'post__in' ) );
 	}
@@ -278,11 +281,11 @@ class ListTableTest extends TestCase {
 	 */
 	public function test_quick_edit_field_reuses_the_meta_box_contract(): void {
 		ob_start();
-		List_Table\quick_edit_field( List_Table\COLUMN_ID, 'post' );
+		$this->quickEdit()->render( Column::COLUMN_ID, 'post' );
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( \Spotlight_Posts\Meta_Box\FIELD_NAME, $html );
-		$this->assertStringContainsString( \Spotlight_Posts\Meta_Box\NONCE_NAME, $html );
+		$this->assertStringContainsString( MetaBox::FIELD_NAME, $html );
+		$this->assertStringContainsString( MetaBox::NONCE_NAME, $html );
 	}
 
 	/**
@@ -290,7 +293,7 @@ class ListTableTest extends TestCase {
 	 */
 	public function test_quick_edit_field_is_scoped_to_posts(): void {
 		ob_start();
-		List_Table\quick_edit_field( List_Table\COLUMN_ID, 'page' );
+		$this->quickEdit()->render( Column::COLUMN_ID, 'page' );
 
 		$this->assertSame( '', (string) ob_get_clean() );
 	}

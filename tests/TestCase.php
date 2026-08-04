@@ -50,4 +50,72 @@ abstract class TestCase extends \WP_UnitTestCase {
 
 		return $post_id;
 	}
+
+	/**
+	 * Admin services, built on demand.
+	 *
+	 * The Plugin only constructs these when is_admin() is true, which it is not under
+	 * PHPUnit, so tests build them directly with the same dependencies.
+	 */
+	private function svc( string $class_name ) {
+		static $built = array();
+
+		if ( isset( $built[ $class_name ] ) ) {
+			return $built[ $class_name ];
+		}
+
+		$plugin     = \Spotlight_Posts\Plugin::instance();
+		$post_types = $plugin->get( \Spotlight_Posts\Support\PostTypes::class );
+		$index      = $plugin->get( \Spotlight_Posts\Featured\Index::class );
+		$schedule   = $plugin->get( \Spotlight_Posts\Featured\Schedule::class );
+		$request    = new \Spotlight_Posts\Support\Request();
+
+		switch ( $class_name ) {
+			case \Spotlight_Posts\Admin\ListTable\Column::class:
+				$built[ $class_name ] = new \Spotlight_Posts\Admin\ListTable\Column( $post_types );
+				break;
+			case \Spotlight_Posts\Admin\ListTable\BulkActions::class:
+				$built[ $class_name ] = new \Spotlight_Posts\Admin\ListTable\BulkActions( $post_types, $request );
+				break;
+			case \Spotlight_Posts\Admin\ListTable\QuickEdit::class:
+				$built[ $class_name ] = new \Spotlight_Posts\Admin\ListTable\QuickEdit( $post_types );
+				break;
+			case \Spotlight_Posts\Admin\ListTable\Filter::class:
+				$built[ $class_name ] = new \Spotlight_Posts\Admin\ListTable\Filter( $index, $post_types, $request );
+				break;
+			case \Spotlight_Posts\Admin\MetaBox::class:
+				$built[ $class_name ] = new \Spotlight_Posts\Admin\MetaBox( $schedule, $post_types, $request );
+				break;
+			case \Spotlight_Posts\Admin\OrderScreen::class:
+				$built[ $class_name ] = new \Spotlight_Posts\Admin\OrderScreen( $index, SPOTLIGHT_POSTS_FILE, \Spotlight_Posts\VERSION );
+				break;
+		}
+
+		return $built[ $class_name ];
+	}
+
+	protected function column(): \Spotlight_Posts\Admin\ListTable\Column {
+		return $this->svc( \Spotlight_Posts\Admin\ListTable\Column::class );
+	}
+
+	protected function bulk(): \Spotlight_Posts\Admin\ListTable\BulkActions {
+		return $this->svc( \Spotlight_Posts\Admin\ListTable\BulkActions::class );
+	}
+
+	protected function quickEdit(): \Spotlight_Posts\Admin\ListTable\QuickEdit {
+		return $this->svc( \Spotlight_Posts\Admin\ListTable\QuickEdit::class );
+	}
+
+	protected function filter(): \Spotlight_Posts\Admin\ListTable\Filter {
+		return $this->svc( \Spotlight_Posts\Admin\ListTable\Filter::class );
+	}
+
+	protected function metaBox(): \Spotlight_Posts\Admin\MetaBox {
+		return $this->svc( \Spotlight_Posts\Admin\MetaBox::class );
+	}
+
+	protected function screen(): \Spotlight_Posts\Admin\OrderScreen {
+		return $this->svc( \Spotlight_Posts\Admin\OrderScreen::class );
+	}
+
 }

@@ -10,9 +10,10 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
-use Spotlight_Posts\Meta_Box;
+
 use Spotlight_Posts\Featured\Schedule;
 use Spotlight_Posts\Featured\Index;
+use Spotlight_Posts\Admin\MetaBox;
 
 /**
  * @covers \Spotlight_Posts\Meta_Box
@@ -58,11 +59,11 @@ class MetaBoxTest extends TestCase {
 		$_POST = array();
 
 		if ( $valid_nonce ) {
-			$_POST[ Meta_Box\NONCE_NAME ] = wp_create_nonce( Meta_Box\NONCE_ACTION );
+			$_POST[ MetaBox::NONCE_NAME ] = wp_create_nonce( MetaBox::NONCE_ACTION );
 		}
 
 		if ( $checked ) {
-			$_POST[ Meta_Box\FIELD_NAME ] = '1';
+			$_POST[ MetaBox::FIELD_NAME ] = '1';
 		}
 	}
 
@@ -79,7 +80,7 @@ class MetaBoxTest extends TestCase {
 	public function test_valid_submission_sets_the_flag(): void {
 		$this->post_form( true );
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		$this->assertTrue( $this->is_featured() );
 	}
@@ -92,7 +93,7 @@ class MetaBoxTest extends TestCase {
 
 		$this->post_form( false );
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		$this->assertFalse( $this->is_featured() );
 	}
@@ -103,7 +104,7 @@ class MetaBoxTest extends TestCase {
 	public function test_missing_nonce_is_rejected(): void {
 		$this->post_form( true, false );
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		$this->assertFalse( $this->is_featured() );
 	}
@@ -113,11 +114,11 @@ class MetaBoxTest extends TestCase {
 	 */
 	public function test_invalid_nonce_is_rejected(): void {
 		$_POST = array(
-			Meta_Box\NONCE_NAME => 'not-a-real-nonce',
-			Meta_Box\FIELD_NAME => '1',
+			MetaBox::NONCE_NAME => 'not-a-real-nonce',
+			MetaBox::FIELD_NAME => '1',
 		);
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		$this->assertFalse( $this->is_featured() );
 	}
@@ -130,7 +131,7 @@ class MetaBoxTest extends TestCase {
 
 		$this->post_form( true );
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		$this->assertFalse( $this->is_featured() );
 	}
@@ -149,7 +150,7 @@ class MetaBoxTest extends TestCase {
 		// that ran afterwards in this process.
 		add_filter( 'spotlight_posts_is_autosave', '__return_true' );
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		remove_filter( 'spotlight_posts_is_autosave', '__return_true' );
 
@@ -163,26 +164,26 @@ class MetaBoxTest extends TestCase {
 	 * The registered sanitize callback only ever stores '1' or an empty string.
 	 */
 	public function test_sanitize_callback_normalises_values(): void {
-		$this->assertSame( '1', Meta_Box\sanitize_meta( '1' ) );
-		$this->assertSame( '', Meta_Box\sanitize_meta( 'yes' ) );
-		$this->assertSame( '', Meta_Box\sanitize_meta( '<script>alert(1)</script>' ) );
-		$this->assertSame( '', Meta_Box\sanitize_meta( '' ) );
+		$this->assertSame( '1', $this->metaBox()->sanitize_meta( '1' ) );
+		$this->assertSame( '', $this->metaBox()->sanitize_meta( 'yes' ) );
+		$this->assertSame( '', $this->metaBox()->sanitize_meta( '<script>alert(1)</script>' ) );
+		$this->assertSame( '', $this->metaBox()->sanitize_meta( '' ) );
 	}
 
 	/**
 	 * An empty "featured until" means no expiry.
 	 */
 	public function test_parse_until_treats_empty_as_no_expiry(): void {
-		$this->assertSame( 0, Meta_Box\parse_until( '' ) );
-		$this->assertSame( 0, Meta_Box\parse_until( '   ' ) );
+		$this->assertSame( 0, $this->metaBox()->parse_until( '' ) );
+		$this->assertSame( 0, $this->metaBox()->parse_until( '   ' ) );
 	}
 
 	/**
 	 * A malformed value means no expiry, not an arbitrary one.
 	 */
 	public function test_parse_until_rejects_garbage(): void {
-		$this->assertSame( 0, Meta_Box\parse_until( 'not a date' ) );
-		$this->assertSame( 0, Meta_Box\parse_until( '2026-13-45T99:99' ) );
+		$this->assertSame( 0, $this->metaBox()->parse_until( 'not a date' ) );
+		$this->assertSame( 0, $this->metaBox()->parse_until( '2026-13-45T99:99' ) );
 	}
 
 	/**
@@ -196,10 +197,10 @@ class MetaBoxTest extends TestCase {
 		$original = get_option( 'timezone_string' );
 
 		update_option( 'timezone_string', 'Asia/Kolkata' );
-		$kolkata = Meta_Box\parse_until( '2026-08-07T17:00' );
+		$kolkata = $this->metaBox()->parse_until( '2026-08-07T17:00' );
 
 		update_option( 'timezone_string', 'UTC' );
-		$utc = Meta_Box\parse_until( '2026-08-07T17:00' );
+		$utc = $this->metaBox()->parse_until( '2026-08-07T17:00' );
 
 		update_option( 'timezone_string', (string) $original );
 
@@ -219,9 +220,9 @@ class MetaBoxTest extends TestCase {
 
 		$when = wp_date( 'Y-m-d\TH:i', time() + DAY_IN_SECONDS );
 
-		$_POST[ Meta_Box\UNTIL_FIELD_NAME ] = $when;
+		$_POST[ MetaBox::UNTIL_FIELD_NAME ] = $when;
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		$this->assertTrue( $this->is_featured() );
 		$this->assertGreaterThan( time(), \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );
@@ -235,9 +236,9 @@ class MetaBoxTest extends TestCase {
 		\Spotlight_Posts\schedule()->set_expiry( $this->post_id, time() + DAY_IN_SECONDS );
 
 		$this->post_form( true );
-		$_POST[ Meta_Box\UNTIL_FIELD_NAME ] = '';
+		$_POST[ MetaBox::UNTIL_FIELD_NAME ] = '';
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );
 		$this->assertFalse( wp_next_scheduled( Schedule::CRON_HOOK, array( $this->post_id ) ) );
@@ -252,7 +253,7 @@ class MetaBoxTest extends TestCase {
 
 		$this->post_form( false );
 
-		Meta_Box\save( $this->post_id );
+		$this->metaBox()->save( $this->post_id );
 
 		$this->assertFalse( $this->is_featured() );
 		$this->assertSame( 0, \Spotlight_Posts\schedule()->expiry_for( $this->post_id ) );

@@ -10,9 +10,11 @@ declare( strict_types = 1 );
 namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
-use Spotlight_Posts\Admin\List_Table;
+
 use Spotlight_Posts\Featured\Index;
 use Spotlight_Posts\Featured\Repository;
+use Spotlight_Posts\Admin\ListTable\Column;
+use Spotlight_Posts\Admin\ListTable\QuickEdit;
 
 /**
  * @covers \Spotlight_Posts\supported_post_types
@@ -200,16 +202,14 @@ class PostTypesTest extends TestCase {
 	 * The list-table column is offered for supported types only.
 	 */
 	public function test_list_table_column_is_scoped_to_supported_types(): void {
-		require_once dirname( __DIR__, 2 ) . '/includes/admin/list-table.php';
-
 		$this->support_guides();
 
 		ob_start();
-		List_Table\quick_edit_field( List_Table\COLUMN_ID, 'guide' );
+		$this->quickEdit()->render( Column::COLUMN_ID, 'guide' );
 		$supported = (string) ob_get_clean();
 
 		ob_start();
-		List_Table\quick_edit_field( List_Table\COLUMN_ID, 'page' );
+		$this->quickEdit()->render( Column::COLUMN_ID, 'page' );
 		$unsupported = (string) ob_get_clean();
 
 		$this->assertNotSame( '', $supported, 'A supported type should get the Quick Edit field.' );
@@ -223,7 +223,7 @@ class PostTypesTest extends TestCase {
 	public function test_meta_is_registered_for_each_supported_type(): void {
 		$this->support_guides();
 
-		Spotlight_Posts\Meta_Box\register_meta();
+		$this->metaBox()->register_meta();
 
 		$registered = get_registered_meta_keys( 'post', 'guide' );
 

@@ -12,11 +12,20 @@ namespace Spotlight_Posts;
 use Spotlight_Posts\Featured\Index;
 use Spotlight_Posts\Featured\Repository;
 use Spotlight_Posts\Featured\Schedule;
+use Spotlight_Posts\Admin\ListTable\AjaxToggle;
+use Spotlight_Posts\Admin\ListTable\BulkActions;
+use Spotlight_Posts\Admin\ListTable\Column;
+use Spotlight_Posts\Admin\ListTable\Filter;
+use Spotlight_Posts\Admin\ListTable\QuickEdit;
+use Spotlight_Posts\Admin\MetaBox;
+use Spotlight_Posts\Admin\OrderScreen;
 use Spotlight_Posts\Frontend\Block;
 use Spotlight_Posts\Frontend\QueryLoopVariation;
 use Spotlight_Posts\Rest\PostsController;
 use Spotlight_Posts\Support\Cache;
 use Spotlight_Posts\Support\PostTypes;
+use Spotlight_Posts\Support\Request;
+use Spotlight_Posts\Support\Translations;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -49,6 +58,7 @@ final class Plugin {
 	private function __construct() {
 		$post_types = new PostTypes();
 		$cache      = new Cache();
+		$request    = new Request();
 
 		$index    = new Index( $cache, $post_types );
 		$schedule = new Schedule( $cache, $post_types );
@@ -57,6 +67,7 @@ final class Plugin {
 		$repository = new Repository( $index, $schedule, $cache, $post_types );
 
 		$this->services = array(
+			Translations::class       => new Translations( SPOTLIGHT_POSTS_FILE ),
 			PostTypes::class          => $post_types,
 			Cache::class              => $cache,
 			Index::class              => $index,
@@ -71,6 +82,22 @@ final class Plugin {
 			),
 			PostsController::class    => new PostsController( $repository ),
 		);
+
+		/*
+		 * Admin services are only constructed in the admin. Building them on a front-end
+		 * request would allocate objects that register nothing.
+		 */
+		if ( is_admin() ) {
+			$this->services += array(
+				MetaBox::class     => new MetaBox( $schedule, $post_types, $request ),
+				OrderScreen::class => new OrderScreen( $index, SPOTLIGHT_POSTS_FILE, VERSION ),
+				Column::class      => new Column( $post_types ),
+				BulkActions::class => new BulkActions( $post_types, $request ),
+				QuickEdit::class   => new QuickEdit( $post_types ),
+				Filter::class      => new Filter( $index, $post_types, $request ),
+				AjaxToggle::class  => new AjaxToggle( $post_types, SPOTLIGHT_POSTS_FILE, VERSION ),
+			);
+		}
 	}
 
 	/**
