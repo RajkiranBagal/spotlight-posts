@@ -11,7 +11,7 @@ namespace Spotlight_Posts\Tests;
 
 use Spotlight_Posts;
 use Spotlight_Posts\Featured\Repository;
-use Spotlight_Posts\REST;
+use Spotlight_Posts\Rest\PostsController;
 use Spotlight_Posts\Featured\Index;
 
 /**
@@ -32,7 +32,7 @@ class RestTest extends TestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->route = '/' . REST\REST_NAMESPACE . REST\ROUTE;
+		$this->route = '/' . PostsController::REST_NAMESPACE . PostsController::ROUTE;
 
 		global $wp_rest_server;
 		$wp_rest_server = new \WP_REST_Server();

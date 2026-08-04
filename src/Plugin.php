@@ -12,6 +12,9 @@ namespace Spotlight_Posts;
 use Spotlight_Posts\Featured\Index;
 use Spotlight_Posts\Featured\Repository;
 use Spotlight_Posts\Featured\Schedule;
+use Spotlight_Posts\Frontend\Block;
+use Spotlight_Posts\Frontend\QueryLoopVariation;
+use Spotlight_Posts\Rest\PostsController;
 use Spotlight_Posts\Support\Cache;
 use Spotlight_Posts\Support\PostTypes;
 
@@ -54,11 +57,19 @@ final class Plugin {
 		$repository = new Repository( $index, $schedule, $cache, $post_types );
 
 		$this->services = array(
-			PostTypes::class  => $post_types,
-			Cache::class      => $cache,
-			Index::class      => $index,
-			Schedule::class   => $schedule,
-			Repository::class => $repository,
+			PostTypes::class          => $post_types,
+			Cache::class              => $cache,
+			Index::class              => $index,
+			Schedule::class           => $schedule,
+			Repository::class         => $repository,
+			Block::class              => new Block( $repository, SPOTLIGHT_POSTS_DIR ),
+			QueryLoopVariation::class => new QueryLoopVariation(
+				$repository,
+				SPOTLIGHT_POSTS_DIR,
+				SPOTLIGHT_POSTS_FILE,
+				VERSION
+			),
+			PostsController::class    => new PostsController( $repository ),
 		);
 	}
 
