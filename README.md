@@ -1,18 +1,36 @@
 # Spotlight Posts
 
-A WordPress plugin that lets editors flag posts as **featured** — from the editor, the
-posts list, bulk actions or Quick Edit — and surfaces them three ways: a variation of
-core's Query Loop, a dedicated dynamic block, and a public REST endpoint.
+Lets WordPress editors flag posts as featured, then shows them through a Query Loop variation, a dynamic block, and a REST endpoint.
+
+[![CI](https://github.com/RajkiranBagal/spotlight-posts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/RajkiranBagal/spotlight-posts/actions/workflows/ci.yml)
+
+**[▶ Try it in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/RajkiranBagal/spotlight-posts/main/blueprint.json)** · [Download the plugin zip](https://github.com/RajkiranBagal/spotlight-posts/releases/latest)
+
+The Playground demo installs the plugin, creates six sample posts, flags four of them, and
+opens a page that renders both the Query Loop variation and the dynamic block.
+
+![Spotlight Posts demo page: four featured posts rendered by the Featured Posts Query Loop variation and by the dynamic block, in curated order](docs/screenshot.png)
+
+## Highlights
+
+- **Three ways to display featured posts:** a *Featured Posts* variation of core's Query Loop,
+  a server-rendered `spotlight-posts/featured-list` block, and a public `spotlight/v1/posts`
+  REST endpoint.
+- **Four ways to flag a post:** the editor sidebar, a star toggle in the posts list, a bulk
+  action, and Quick Edit. A drag-and-keyboard ordering screen and scheduled expiry are
+  included too.
+- **The read path never queries by meta.** Featured IDs are kept in one ordered index and
+  fetched by primary key with `post__in`, behind versioned object-cache keys.
+- **138 PHPUnit integration tests** run against a real WordPress install. CI covers
+  PHP 8.1, 8.2 and 8.3 on WordPress 6.7, plus trunk.
+- **A clean `WordPress-VIP-Go` PHPCS run.** CI also pins the number of `phpcs:ignore`
+  suppressions at 4, so adding one has to be deliberate.
 
 > **Not affiliated with WordPress VIP or Automattic.** The name and the `vip_` prefixes
 > refer to the platform this targets, not to its authorship. It is independent work,
 > built to the standards a VIP engagement depends on: object caching, primary-key
 > queries, disciplined escaping and sanitization, nonce plus capability checks, and a
 > clean `WordPress-VIP-Go` run.
-
-**What that rests on:** 106 integration tests against a real WordPress install · CI on
-PHP 8.1 / 8.2 / 8.3 and WordPress trunk · zero PHPCS findings · every feature exercised
-end to end in a VIP local environment.
 
 It has not run against VIP production traffic, so read "VIP-ready" as *built to the
 standard and verified locally*, not as *proven at scale*.
@@ -424,6 +442,11 @@ the deploy branch as-is, so built assets *must* exist there. The standard patter
 is to keep `src/` on the working branch and have CI build and commit artifacts to
 the deploy branch — the artifact gets committed, but by a machine, to a branch
 humans do not review. This repo is the source side of that split.
+
+Installable builds are published the same way, by attaching a built zip to a
+[GitHub Release](https://github.com/RajkiranBagal/spotlight-posts/releases). That zip is
+what the Playground demo installs, so a change only reaches the demo once a new release
+is cut.
 
 ---
 

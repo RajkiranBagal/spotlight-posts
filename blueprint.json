@@ -1,0 +1,38 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "latest"
+	},
+	"features": {
+		"networking": true
+	},
+	"steps": [
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "url",
+				"url": "https://github.com/RajkiranBagal/spotlight-posts/releases/latest/download/spotlight-posts.zip"
+			},
+			"options": {
+				"activate": true
+			}
+		},
+		{
+			"step": "login",
+			"username": "admin",
+			"password": "password"
+		},
+		{
+			"step": "setSiteOptions",
+			"options": {
+				"blogname": "Spotlight Posts demo"
+			}
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php\nrequire_once '/wordpress/wp-load.php';\n\n$posts = array(\n\tarray( 'The quiet economics of slow journalism', 'Why newsrooms that publish less are building more loyal audiences.', '#1e3a5f' ),\n\tarray( 'Inside the city that banned billboards', 'Ten years on, residents still notice the sky first.', '#7c2d12' ),\n\tarray( 'A field guide to monsoon gardens', 'What to plant when the rain arrives all at once.', '#14532d' ),\n\tarray( 'The last typewriter repair shop in Pune', 'Three generations, one workbench, and a waiting list.', '#4c1d95' ),\n\tarray( 'How night trains made a comeback', 'Sleeper routes are returning across Europe and Asia.', '#0f172a' ),\n\tarray( 'What chess engines taught grandmasters', 'Machines changed the openings. Humans changed the endgame.', '#713f12' ),\n);\n\nrequire_once ABSPATH . 'wp-admin/includes/image.php';\n\n$ids = array();\nforeach ( $posts as $i => $p ) {\n\tlist( $title, $excerpt, $color ) = $p;\n\t$id = wp_insert_post( array(\n\t\t'post_title'   => $title,\n\t\t'post_excerpt' => $excerpt,\n\t\t'post_content' => '<!-- wp:paragraph --><p>' . esc_html( $excerpt ) . ' This sample post was created by the Spotlight Posts Playground demo.</p><!-- /wp:paragraph -->',\n\t\t'post_status'  => 'publish',\n\t\t'post_date'    => gmdate( 'Y-m-d H:i:s', time() - ( $i * DAY_IN_SECONDS ) ),\n\t) );\n\t$ids[] = $id;\n\n\t// Featured image: a solid-colour placeholder drawn with GD, so the demo needs no\n\t// network access for media. Skipped quietly if GD is unavailable.\n\tif ( function_exists( 'imagecreatetruecolor' ) ) {\n\t\t$img = imagecreatetruecolor( 1200, 675 );\n\t\tlist( $r, $g, $b ) = sscanf( $color, '#%02x%02x%02x' );\n\t\timagefill( $img, 0, 0, imagecolorallocate( $img, $r, $g, $b ) );\n\t\t$upload = wp_upload_dir();\n\t\t$file   = trailingslashit( $upload['path'] ) . 'spotlight-demo-' . ( $i + 1 ) . '.png';\n\t\timagepng( $img, $file );\n\t\timagedestroy( $img );\n\n\t\t$attachment_id = wp_insert_attachment( array(\n\t\t\t'post_mime_type' => 'image/png',\n\t\t\t'post_title'     => $title,\n\t\t\t'post_status'    => 'inherit',\n\t\t), $file, $id );\n\t\twp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $file ) );\n\t\tset_post_thumbnail( $id, $attachment_id );\n\t}\n}\n\n// Flag four of the six as featured. Writing the meta is enough: the plugin's index\n// listens for the meta write and puts the most recently flagged post first, so the\n// blocks show them in an order that deliberately differs from publish date.\nforeach ( array( $ids[2], $ids[0], $ids[4], $ids[1] ) as $id ) {\n\tupdate_post_meta( $id, '_spotlight_featured', '1' );\n}\n\n$query_attrs = array(\n\t'queryId'   => 1,\n\t'namespace' => 'spotlight-posts/featured-query',\n\t'query'     => array(\n\t\t'namespace' => 'spotlight-posts/featured-query',\n\t\t'perPage'   => 4,\n\t\t'pages'     => 0,\n\t\t'offset'    => 0,\n\t\t'postType'  => 'post',\n\t\t'order'     => 'desc',\n\t\t'orderBy'   => 'date',\n\t\t'author'    => '',\n\t\t'search'    => '',\n\t\t'exclude'   => array(),\n\t\t'sticky'    => '',\n\t\t'inherit'   => false,\n\t),\n);\n\n$content = '<!-- wp:paragraph --><p>Four of the six sample posts are flagged as featured. Both blocks below show them in the order set under <strong>Posts → Featured Order</strong>, not by date.</p><!-- /wp:paragraph -->'\n\t. '<!-- wp:heading --><h2 class=\"wp-block-heading\">Query Loop variation: Featured Posts</h2><!-- /wp:heading -->'\n\t. '<!-- wp:query ' . wp_json_encode( $query_attrs ) . ' --><div class=\"wp-block-query\">'\n\t. '<!-- wp:post-template {\"layout\":{\"type\":\"grid\",\"columnCount\":2}} -->'\n\t. '<!-- wp:post-featured-image {\"isLink\":true,\"aspectRatio\":\"16/9\"} /-->'\n\t. '<!-- wp:post-title {\"isLink\":true,\"level\":3} /-->'\n\t. '<!-- wp:post-excerpt /-->'\n\t. '<!-- /wp:post-template --></div><!-- /wp:query -->'\n\t. '<!-- wp:spotlight-posts/featured-list {\"heading\":\"Dynamic block: Featured Posts\",\"numberOfPosts\":4} /-->';\n\n$page_id = wp_insert_post( array(\n\t'post_type'    => 'page',\n\t'post_title'   => 'Spotlight Posts demo',\n\t'post_name'    => 'spotlight-demo',\n\t'post_status'  => 'publish',\n\t'post_content' => $content,\n) );\n\nupdate_option( 'show_on_front', 'page' );\nupdate_option( 'page_on_front', $page_id );\n"
+		}
+	]
+}
